@@ -20,9 +20,14 @@ insulate("Seven More Languages in Seven Weeks #7w7", function()
         sum = 0
         day1.for_loop1(1, 10, f)
         assert.are_equal(55, sum)
-
         local add = function(a, b) return a + b end
         assert.are_equal(15, day1.reduce(5, 0, add))
         assert.are_equal(20, day1.reduce(5, 5, add))
+        assert.are_equal(1, day1.factorial(1))
+        assert.are_equal(1, day1.factorial1(1))
+        assert.are_equal(1, day1.factorial2(1))
+        assert.are_equal(720, day1.factorial(6))
+        assert.are_equal(720, day1.factorial1(6))
+        assert.are_equal(720, day1.factorial2(6))
     end)
 end)
