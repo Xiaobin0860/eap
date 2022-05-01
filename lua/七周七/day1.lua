@@ -24,8 +24,32 @@ local function primes_ends_in_3(n)
   return primes
 end
 
+local function for_loop(a, b, f)
+  local i = a
+  while i <= b do
+    f(i)
+    i = i + 1
+  end
+end
+
+local function for_loop1(a, b, f)
+  for i = a, b do
+    f(i)
+  end
+end
+
+local function reduce(max, init, f)
+  if max <= 0 then
+    return init
+  end
+  return reduce(max - 1, f(init, max), f)
+end
+
 return {
   ends_in_3 = ends_in_3,
   is_prime = is_prime,
-  primes_ends_in_3 = primes_ends_in_3
+  primes_ends_in_3 = primes_ends_in_3,
+  for_loop = for_loop,
+  for_loop1 = for_loop1,
+  reduce = reduce,
 }

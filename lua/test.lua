@@ -13,5 +13,16 @@ insulate("Seven More Languages in Seven Weeks #7w7", function()
         assert.are_same({ 3 }, day1.primes_ends_in_3(1))
         assert.are_same({ 3, 13 }, day1.primes_ends_in_3(2))
         assert.are_same({ 3, 13, 23 }, day1.primes_ends_in_3(3))
+        local sum = 0
+        local f = function(i) sum = sum + i end
+        day1.for_loop(1, 10, f)
+        assert.are_equal(55, sum)
+        sum = 0
+        day1.for_loop1(1, 10, f)
+        assert.are_equal(55, sum)
+
+        local add = function(a, b) return a + b end
+        assert.are_equal(15, day1.reduce(5, 0, add))
+        assert.are_equal(20, day1.reduce(5, 5, add))
     end)
 end)
