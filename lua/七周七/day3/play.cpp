@@ -1,5 +1,5 @@
 #include <iostream>
-#include "lua/lua.hpp"
+#include "lua.hpp"
 #include "rtmidi/RtMidi.h"
 
 namespace {
