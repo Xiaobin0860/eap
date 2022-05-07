@@ -1,2 +1,2 @@
 
-add_subdirectory(七周七/day3)
+add_subdirectory(7w7/day3)

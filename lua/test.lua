@@ -1,7 +1,7 @@
 require 'busted.runner'()
 
 insulate("Seven More Languages in Seven Weeks 1 #7w7 #day1", function()
-    local day1 = require("七周七.day1")
+    local day1 = require("7w7.day1")
     it("day1 tests", function()
         assert.is_true(day1.ends_in_3(3))
         assert.is_true(day1.ends_in_3(13))
@@ -37,7 +37,7 @@ insulate("Seven More Languages in Seven Weeks 1 #7w7 #day1", function()
 end)
 
 insulate("Seven More Languages in Seven Weeks 2 #7w7 #day2", function()
-    local day2 = require("七周七.day2")
+    local day2 = require("7w7.day2")
     it("meta", function()
         local a = {1, 2, 3}
         local b = {"a", "b", "c"}
@@ -95,7 +95,7 @@ insulate("Seven More Languages in Seven Weeks 2 #7w7 #day2", function()
         end
     end)
 
-    local scheduler = require("七周七.scheduler")
+    local scheduler = require("7w7.scheduler")
     it("schedule", function()
         local function punch()
             for i = 1, 5 do

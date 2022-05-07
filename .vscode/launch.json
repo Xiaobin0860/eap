@@ -9,7 +9,7 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/play",
-      "args": ["${workspaceFolder}/lua/七周七/day3/one_note_song.lua"],
+      "args": ["${workspaceFolder}/lua/7w7/day3/one_note_song.lua"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/@bin/Debug",
       "environment": [],
