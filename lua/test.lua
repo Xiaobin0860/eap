@@ -64,6 +64,7 @@ insulate("Seven More Languages in Seven Weeks 2 #7w7 #day2", function()
         setmetatable(b, mt)
         assert.are_same({1, 2, 3, "a", "b", "c"}, a + b)
     end)
+
     it("Queue", function()
         local Queue = day2.Queue
         local q = Queue.new()
@@ -75,6 +76,7 @@ insulate("Seven More Languages in Seven Weeks 2 #7w7 #day2", function()
         assert.are_equal(nil, q:remove())
         assert.are_equal(nil, q:remove())
     end)
+
     it("retry", function()
         local retry = day2.retry
         local ct, result = retry(5, function()
@@ -91,5 +93,24 @@ insulate("Seven More Languages in Seven Weeks 2 #7w7 #day2", function()
         else
             assert.are_same({1, "2"}, result)
         end
+    end)
+
+    local scheduler = require("七周七.scheduler")
+    it("schedule", function()
+        local function punch()
+            for i = 1, 5 do
+                print("punch " .. i)
+                scheduler.wait(1.0)
+            end
+        end
+        local function block()
+            for i = 1, 3 do
+                print("block " .. i)
+                scheduler.wait(2.0)
+            end
+        end
+        scheduler.schedule(0.0, coroutine.create(punch))
+        scheduler.schedule(0.0, coroutine.create(block))
+        scheduler.run()
     end)
 end)
