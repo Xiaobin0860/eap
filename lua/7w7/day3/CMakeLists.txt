@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 
 project(play)
 
-find_package(Lua REQUIRED)
+find_package(Lua CONFIG REQUIRED)
 find_package(RtMidi CONFIG REQUIRED)
 
 add_executable(play "play.cpp")
