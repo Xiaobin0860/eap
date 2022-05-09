@@ -9,9 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/play",
-      "args": [
-        "${workspaceFolder}/lua/7w7/day3/one_note_song.lua"
-      ],
+      "args": ["${workspaceFolder}/lua/7w7/day3/one_note_song.lua"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/@bin",
       "environment": [],
@@ -23,11 +21,39 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/play",
-      "args": [
-        "${workspaceFolder}/lua/7w7/day3/one_note_song.lua"
-      ],
+      "args": ["${workspaceFolder}/lua/7w7/day3/one_note_song.lua"],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/@bin/Debug",
+      "cwd": "${workspaceFolder}/lua",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      }
+    },
+    {
+      "name": "vsdbg play good_morning_song",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/@bin/Debug/play",
+      "args": ["${workspaceFolder}/lua/7w7/day3/good_morning_to_all.lua"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/lua",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      }
+    },
+    {
+      "name": "vsdbg play canon",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/@bin/Debug/play",
+      "args": ["${workspaceFolder}/lua/7w7/day3/canon.lua"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/lua",
       "environment": [],
       "console": "integratedTerminal",
       "logging": {
