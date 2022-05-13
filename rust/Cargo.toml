@@ -1,0 +1,5 @@
+[workspace]
+
+members = [
+    "helloworld-tonic", # tonic hello world
+]
