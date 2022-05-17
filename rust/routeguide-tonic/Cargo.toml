@@ -1,0 +1,32 @@
+[package]
+name = "routeguide-tonic"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "routeclient-tonic"
+path = "src/client.rs"
+
+[[bin]]
+name = "routeserver-tonic"
+path = "src/server.rs"
+
+[dependencies]
+tonic = "0.7"
+prost = "0.10"
+futures-core = "0.3"
+futures-util = "0.3"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+async-stream = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.8"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-build = "0.7"
