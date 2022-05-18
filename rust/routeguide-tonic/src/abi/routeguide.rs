@@ -2,11 +2,11 @@
 /// (degrees multiplied by 10**7 and rounded to the nearest integer).
 /// Latitudes should be in the range +/- 90 degrees and longitude should be in
 /// the range +/- 180 degrees (inclusive).
-#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(Hash, Clone, PartialEq, ::prost::Message)]
 pub struct Point {
-    #[prost(int32, tag="1")]
+    #[prost(int32, tag = "1")]
     pub latitude: i32,
-    #[prost(int32, tag="2")]
+    #[prost(int32, tag = "2")]
     pub longitude: i32,
 }
 /// A latitude-longitude rectangle, represented as two diagonally opposite
@@ -14,10 +14,10 @@ pub struct Point {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Rectangle {
     /// One corner of the rectangle.
-    #[prost(message, optional, tag="1")]
+    #[prost(message, optional, tag = "1")]
     pub lo: ::core::option::Option<Point>,
     /// The other corner of the rectangle.
-    #[prost(message, optional, tag="2")]
+    #[prost(message, optional, tag = "2")]
     pub hi: ::core::option::Option<Point>,
 }
 /// A feature names something at a given point.
@@ -26,20 +26,20 @@ pub struct Rectangle {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Feature {
     /// The name of the feature.
-    #[prost(string, tag="1")]
+    #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
     /// The point where the feature is detected.
-    #[prost(message, optional, tag="2")]
+    #[prost(message, optional, tag = "2")]
     pub location: ::core::option::Option<Point>,
 }
 /// A RouteNote is a message sent while at a given point.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RouteNote {
     /// The location from which the message is sent.
-    #[prost(message, optional, tag="1")]
+    #[prost(message, optional, tag = "1")]
     pub location: ::core::option::Option<Point>,
     /// The message to be sent.
-    #[prost(string, tag="2")]
+    #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
 /// A RouteSummary is received in response to a RecordRoute rpc.
@@ -50,16 +50,16 @@ pub struct RouteNote {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RouteSummary {
     /// The number of points received.
-    #[prost(int32, tag="1")]
+    #[prost(int32, tag = "1")]
     pub point_count: i32,
     /// The number of known features passed while traversing the route.
-    #[prost(int32, tag="2")]
+    #[prost(int32, tag = "2")]
     pub feature_count: i32,
     /// The distance covered in metres.
-    #[prost(int32, tag="3")]
+    #[prost(int32, tag = "3")]
     pub distance: i32,
     /// The duration of the traversal in seconds.
-    #[prost(int32, tag="4")]
+    #[prost(int32, tag = "4")]
     pub elapsed_time: i32,
 }
 /// Generated client implementations.
@@ -106,9 +106,8 @@ pub mod route_guide_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
-            >>::Error: Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
+                Into<StdError> + Send + Sync,
         {
             RouteGuideClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -137,19 +136,14 @@ pub mod route_guide_client {
             &mut self,
             request: impl tonic::IntoRequest<super::Point>,
         ) -> Result<tonic::Response<super::Feature>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/routeguide.RouteGuide/GetFeature",
-            );
+            let path = http::uri::PathAndQuery::from_static("/routeguide.RouteGuide/GetFeature");
             self.inner.unary(request.into_request(), path, codec).await
         }
         /// A server-to-client streaming RPC.
@@ -161,24 +155,19 @@ pub mod route_guide_client {
         pub async fn list_features(
             &mut self,
             request: impl tonic::IntoRequest<super::Rectangle>,
-        ) -> Result<
-                tonic::Response<tonic::codec::Streaming<super::Feature>>,
-                tonic::Status,
-            > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> Result<tonic::Response<tonic::codec::Streaming<super::Feature>>, tonic::Status>
+        {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/routeguide.RouteGuide/ListFeatures",
-            );
-            self.inner.server_streaming(request.into_request(), path, codec).await
+            let path = http::uri::PathAndQuery::from_static("/routeguide.RouteGuide/ListFeatures");
+            self.inner
+                .server_streaming(request.into_request(), path, codec)
+                .await
         }
         /// A client-to-server streaming RPC.
         ///
@@ -188,19 +177,14 @@ pub mod route_guide_client {
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::Point>,
         ) -> Result<tonic::Response<super::RouteSummary>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/routeguide.RouteGuide/RecordRoute",
-            );
+            let path = http::uri::PathAndQuery::from_static("/routeguide.RouteGuide/RecordRoute");
             self.inner
                 .client_streaming(request.into_streaming_request(), path, codec)
                 .await
@@ -212,24 +196,19 @@ pub mod route_guide_client {
         pub async fn route_chat(
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::RouteNote>,
-        ) -> Result<
-                tonic::Response<tonic::codec::Streaming<super::RouteNote>>,
-                tonic::Status,
-            > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
+        ) -> Result<tonic::Response<tonic::codec::Streaming<super::RouteNote>>, tonic::Status>
+        {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/routeguide.RouteGuide/RouteChat",
-            );
-            self.inner.streaming(request.into_streaming_request(), path, codec).await
+            let path = http::uri::PathAndQuery::from_static("/routeguide.RouteGuide/RouteChat");
+            self.inner
+                .streaming(request.into_streaming_request(), path, codec)
+                .await
         }
     }
 }
@@ -251,9 +230,7 @@ pub mod route_guide_server {
             request: tonic::Request<super::Point>,
         ) -> Result<tonic::Response<super::Feature>, tonic::Status>;
         ///Server streaming response type for the ListFeatures method.
-        type ListFeaturesStream: futures_core::Stream<
-                Item = Result<super::Feature, tonic::Status>,
-            >
+        type ListFeaturesStream: futures_core::Stream<Item = Result<super::Feature, tonic::Status>>
             + Send
             + 'static;
         /// A server-to-client streaming RPC.
@@ -275,9 +252,7 @@ pub mod route_guide_server {
             request: tonic::Request<tonic::Streaming<super::Point>>,
         ) -> Result<tonic::Response<super::RouteSummary>, tonic::Status>;
         ///Server streaming response type for the RouteChat method.
-        type RouteChatStream: futures_core::Stream<
-                Item = Result<super::RouteNote, tonic::Status>,
-            >
+        type RouteChatStream: futures_core::Stream<Item = Result<super::RouteNote, tonic::Status>>
             + Send
             + 'static;
         /// A Bidirectional streaming RPC.
@@ -309,10 +284,7 @@ pub mod route_guide_server {
                 send_compression_encodings: Default::default(),
             }
         }
-        pub fn with_interceptor<F>(
-            inner: T,
-            interceptor: F,
-        ) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -328,10 +300,7 @@ pub mod route_guide_server {
         type Response = http::Response<tonic::body::BoxBody>;
         type Error = std::convert::Infallible;
         type Future = BoxFuture<Self::Response, Self::Error>;
-        fn poll_ready(
-            &mut self,
-            _cx: &mut Context<'_>,
-        ) -> Poll<Result<(), Self::Error>> {
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
             Poll::Ready(Ok(()))
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
@@ -340,17 +309,10 @@ pub mod route_guide_server {
                 "/routeguide.RouteGuide/GetFeature" => {
                     #[allow(non_camel_case_types)]
                     struct GetFeatureSvc<T: RouteGuide>(pub Arc<T>);
-                    impl<T: RouteGuide> tonic::server::UnaryService<super::Point>
-                    for GetFeatureSvc<T> {
+                    impl<T: RouteGuide> tonic::server::UnaryService<super::Point> for GetFeatureSvc<T> {
                         type Response = super::Feature;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::Point>,
-                        ) -> Self::Future {
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(&mut self, request: tonic::Request<super::Point>) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move { (*inner).get_feature(request).await };
                             Box::pin(fut)
@@ -363,11 +325,10 @@ pub mod route_guide_server {
                         let inner = inner.0;
                         let method = GetFeatureSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            );
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
@@ -376,24 +337,17 @@ pub mod route_guide_server {
                 "/routeguide.RouteGuide/ListFeatures" => {
                     #[allow(non_camel_case_types)]
                     struct ListFeaturesSvc<T: RouteGuide>(pub Arc<T>);
-                    impl<
-                        T: RouteGuide,
-                    > tonic::server::ServerStreamingService<super::Rectangle>
-                    for ListFeaturesSvc<T> {
+                    impl<T: RouteGuide> tonic::server::ServerStreamingService<super::Rectangle> for ListFeaturesSvc<T> {
                         type Response = super::Feature;
                         type ResponseStream = T::ListFeaturesStream;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::ResponseStream>,
-                            tonic::Status,
-                        >;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::Rectangle>,
                         ) -> Self::Future {
                             let inner = self.0.clone();
-                            let fut = async move {
-                                (*inner).list_features(request).await
-                            };
+                            let fut = async move { (*inner).list_features(request).await };
                             Box::pin(fut)
                         }
                     }
@@ -404,11 +358,10 @@ pub mod route_guide_server {
                         let inner = inner.0;
                         let method = ListFeaturesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            );
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
@@ -417,23 +370,15 @@ pub mod route_guide_server {
                 "/routeguide.RouteGuide/RecordRoute" => {
                     #[allow(non_camel_case_types)]
                     struct RecordRouteSvc<T: RouteGuide>(pub Arc<T>);
-                    impl<
-                        T: RouteGuide,
-                    > tonic::server::ClientStreamingService<super::Point>
-                    for RecordRouteSvc<T> {
+                    impl<T: RouteGuide> tonic::server::ClientStreamingService<super::Point> for RecordRouteSvc<T> {
                         type Response = super::RouteSummary;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<tonic::Streaming<super::Point>>,
                         ) -> Self::Future {
                             let inner = self.0.clone();
-                            let fut = async move {
-                                (*inner).record_route(request).await
-                            };
+                            let fut = async move { (*inner).record_route(request).await };
                             Box::pin(fut)
                         }
                     }
@@ -444,11 +389,10 @@ pub mod route_guide_server {
                         let inner = inner.0;
                         let method = RecordRouteSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            );
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.client_streaming(method, req).await;
                         Ok(res)
                     };
@@ -457,14 +401,11 @@ pub mod route_guide_server {
                 "/routeguide.RouteGuide/RouteChat" => {
                     #[allow(non_camel_case_types)]
                     struct RouteChatSvc<T: RouteGuide>(pub Arc<T>);
-                    impl<T: RouteGuide> tonic::server::StreamingService<super::RouteNote>
-                    for RouteChatSvc<T> {
+                    impl<T: RouteGuide> tonic::server::StreamingService<super::RouteNote> for RouteChatSvc<T> {
                         type Response = super::RouteNote;
                         type ResponseStream = T::RouteChatStream;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::ResponseStream>,
-                            tonic::Status,
-                        >;
+                        type Future =
+                            BoxFuture<tonic::Response<Self::ResponseStream>, tonic::Status>;
                         fn call(
                             &mut self,
                             request: tonic::Request<tonic::Streaming<super::RouteNote>>,
@@ -481,28 +422,23 @@ pub mod route_guide_server {
                         let inner = inner.0;
                         let method = RouteChatSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            );
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
                         let res = grpc.streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)
                 }
-                _ => {
-                    Box::pin(async move {
-                        Ok(
-                            http::Response::builder()
-                                .status(200)
-                                .header("grpc-status", "12")
-                                .header("content-type", "application/grpc")
-                                .body(empty_body())
-                                .unwrap(),
-                        )
-                    })
-                }
+                _ => Box::pin(async move {
+                    Ok(http::Response::builder()
+                        .status(200)
+                        .header("grpc-status", "12")
+                        .header("content-type", "application/grpc")
+                        .body(empty_body())
+                        .unwrap())
+                }),
             }
         }
     }
