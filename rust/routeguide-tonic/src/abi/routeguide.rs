@@ -2,7 +2,7 @@
 /// (degrees multiplied by 10**7 and rounded to the nearest integer).
 /// Latitudes should be in the range +/- 90 degrees and longitude should be in
 /// the range +/- 180 degrees (inclusive).
-#[derive(Hash, Clone, PartialEq, ::prost::Message)]
+#[derive(Hash, Eq, Clone, PartialEq, ::prost::Message)]
 pub struct Point {
     #[prost(int32, tag = "1")]
     pub latitude: i32,

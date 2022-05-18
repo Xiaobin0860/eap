@@ -1,6 +1,6 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure()
-        .type_attribute("routeguide.Point", "#[derive(Hash)]")
+        .type_attribute("routeguide.Point", "#[derive(Hash, Eq)]")
         .out_dir("src/abi")
         .compile(&["proto/routeguide.proto"], &["proto"])?;
 

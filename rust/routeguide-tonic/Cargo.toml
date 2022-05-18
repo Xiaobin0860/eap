@@ -16,8 +16,7 @@ path = "src/server.rs"
 [dependencies]
 tonic = "0.7"
 prost = "0.10"
-futures-core = "0.3"
-futures-util = "0.3"
+futures = "0.3"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 async-stream = "0.3"
