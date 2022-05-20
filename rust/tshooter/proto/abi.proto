@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package abi;
+
+service Game
+{
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc GetStream(stream Request) returns (stream Response);
+}
+
+// Shared message types.
+
+message Coordinate
+{
+    int32 x = 1;
+    int32 y = 2;
+}
+
+enum Direction {
+    UP = 0;
+    DOWN = 1;
+    LEFT = 2;
+    RIGHT = 3;
+    STOP = 4;
+}
+
+message Player
+{
+    string     id = 1;
+    string     name = 2;
+    Coordinate position = 3;
+    string     icon = 4;
+}
+
+message Laser
+{
+    string     id = 1;
+    Direction  direction = 2;
+    sfixed64   start_time = 3;
+    Coordinate initial_position = 4;
+    string     owner_id = 5;
+}
+
+// Message actions.
+
+message Entity
+{
+    oneof entity
+    {
+        Player player = 2;
+        Laser  laser = 3;
+    }
+}
+
+message LoginRequest
+{
+    string id = 1;
+    string name = 2;
+    string password = 3;
+}
+
+message LoginResponse
+{
+    string          token = 1;
+    repeated Entity entities = 2;
+}
+
+message Move
+{
+    Direction direction = 1;
+}
+
+message AddEntity
+{
+    Entity entity = 1;
+}
+
+message UpdateEntity
+{
+    Entity entity = 1;
+}
+
+message RemoveEntity
+{
+    string id = 1;
+}
+
+message PlayerRespawn
+{
+    Player player = 1;
+    string killer_id = 2;
+}
+
+message RoundOver
+{
+    string   winner_id = 1;
+    sfixed64 new_round_time = 2;
+}
+
+message RoundStart
+{
+    repeated Player players = 1;
+}
+
+// Wraps multiple message actions.
+
+message Request
+{
+    oneof action
+    {
+        Move  move = 1;
+        Laser laser = 2;
+    }
+}
+
+message Response
+{
+    oneof action
+    {
+        AddEntity     add_entity = 1;
+        UpdateEntity  update_entity = 2;
+        RemoveEntity  remove_entity = 3;
+        PlayerRespawn player_respawn = 4;
+        RoundOver     round_over = 5;
+        RoundStart    round_start = 6;
+    }
+}
