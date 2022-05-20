@@ -97,24 +97,23 @@ func (game *Game) watchCollisions() {
 			}
 			// Handle entities that collided with the laser.
 			for _, entity := range entities {
-				switch entity.(type) {
+				switch entity := entity.(type) {
 				case *Player:
 					// If the game isn't authoritative, another system decides
 					// when players die and score is changed.
 					if !game.IsAuthoritative {
 						continue
 					}
-					player := entity.(*Player)
 					// Don't allow players to kill themselves.
-					if player.ID() == laserOwnerID {
+					if entity.ID() == laserOwnerID {
 						continue
 					}
 					// Choose the next spawn point.
 					spawnPoint := spawnPoints[game.spawnPointIndex%len(spawnPoints)]
 					game.spawnPointIndex++
-					player.Move(spawnPoint)
+					entity.Move(spawnPoint)
 					change := PlayerRespawnChange{
-						Player:     player,
+						Player:     entity,
 						KilledByID: laserOwnerID,
 					}
 					game.sendChange(change)

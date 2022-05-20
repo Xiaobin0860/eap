@@ -21,7 +21,7 @@ type Laser struct {
 // Position returns the laser position, which is calculated at runtime based on
 // when the laser was fired.
 func (laser *Laser) Position() Coordinate {
-	difference := time.Now().Sub(laser.StartTime)
+	difference := time.Since(laser.StartTime)
 	moves := int(math.Floor(float64(difference.Milliseconds()) / float64(laserSpeed)))
 	position := laser.InitialPosition
 	switch laser.Direction {
