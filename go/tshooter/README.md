@@ -37,8 +37,6 @@ make run
 make run-server
 # Run a client
 make run-client
-# Run a bot as a client
-make run-bot-client
 ```
 
 If you run the commands or binaries directly more command line options are

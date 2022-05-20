@@ -7,7 +7,7 @@ import (
 	"github.com/beefsack/go-astar"
 	"github.com/google/uuid"
 
-	"pkg/backend"
+	"tshooter/pkg/backend"
 )
 
 // bot controls a player in the game.
@@ -35,7 +35,7 @@ func (bots *Bots) AddBot(name string) *backend.Player {
 	player := &backend.Player{
 		Name:            name,
 		Icon:            'b',
-		IdentifierBase:  backend.IdentifierBase{playerID},
+		IdentifierBase:  backend.IdentifierBase{UUID: playerID},
 		CurrentPosition: backend.Coordinate{X: -1, Y: 9},
 	}
 	bots.game.Mu.Lock()
@@ -164,10 +164,9 @@ func (bots *Bots) Start() {
 			// Get all player positions.
 			playerPositions := make(map[uuid.UUID]backend.Coordinate, 0)
 			for _, entity := range bots.game.Entities {
-				switch entity.(type) {
+				switch entity := entity.(type) {
 				case *backend.Player:
-					player := entity.(*backend.Player)
-					playerPositions[entity.ID()] = player.Position()
+					playerPositions[entity.ID()] = entity.Position()
 				}
 			}
 			bots.game.Mu.RUnlock()
