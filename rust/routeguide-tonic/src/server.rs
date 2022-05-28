@@ -57,11 +57,11 @@ impl RouteGuide for RouteGuideService {
 
     async fn record_route(
         &self,
-        _req: Request<Streaming<Point>>,
+        req: Request<Streaming<Point>>,
     ) -> Result<Response<RouteSummary>, Status> {
         debug!("record_route");
 
-        let mut stream = _req.into_inner();
+        let mut stream = req.into_inner();
 
         let mut summary = RouteSummary::default();
         let mut last_point = None;
