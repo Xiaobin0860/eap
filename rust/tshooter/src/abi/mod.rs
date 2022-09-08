@@ -1,3 +1,3 @@
-mod abi;
+mod proto;
 
-pub use abi::{game_client::*, game_server::*, *};
+pub use proto::{game_client::*, game_server::*, *};

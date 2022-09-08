@@ -1,4 +1,7 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("cargo:rerun-if-changed=proto/routeguide.proto");
+    println!("cargo:rerun-if-changed=build.rs");
+
     tonic_build::configure()
         .type_attribute("routeguide.Point", "#[derive(Hash, Eq)]")
         .out_dir("src/abi")
@@ -8,9 +11,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .args(&["fmt", "--", "src/abi/routeguide.rs"])
         .status()
         .expect("cargo fmt failed");
-
-    println!("cargo:rerun-if-changed=proto/routeguide.proto");
-    println!("cargo:rerun-if-changed=build.rs");
 
     Ok(())
 }

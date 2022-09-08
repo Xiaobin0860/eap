@@ -152,9 +152,25 @@ pub enum Direction {
     Right = 3,
     Stop = 4,
 }
+impl Direction {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Direction::Up => "UP",
+            Direction::Down => "DOWN",
+            Direction::Left => "LEFT",
+            Direction::Right => "RIGHT",
+            Direction::Stop => "STOP",
+        }
+    }
+}
 /// Generated client implementations.
 pub mod game_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
     #[derive(Debug, Clone)]
     pub struct GameClient<T> {
@@ -182,6 +198,10 @@ pub mod game_client {
             let inner = tonic::client::Grpc::new(inner);
             Self { inner }
         }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
         pub fn with_interceptor<F>(inner: T, interceptor: F) -> GameClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
@@ -197,19 +217,19 @@ pub mod game_client {
         {
             GameClient::new(InterceptedService::new(inner, interceptor))
         }
-        /// Compress requests with `gzip`.
+        /// Compress requests with the given encoding.
         ///
         /// This requires the server to support it otherwise it might respond with an
         /// error.
         #[must_use]
-        pub fn send_gzip(mut self) -> Self {
-            self.inner = self.inner.send_gzip();
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
             self
         }
-        /// Enable decompressing responses with `gzip`.
+        /// Enable decompressing responses.
         #[must_use]
-        pub fn accept_gzip(mut self) -> Self {
-            self.inner = self.inner.accept_gzip();
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
             self
         }
         pub async fn login(
@@ -223,7 +243,7 @@ pub mod game_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/abi.Game/Login");
+            let path = http::uri::PathAndQuery::from_static("/proto.Game/Login");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn get_stream(
@@ -238,7 +258,7 @@ pub mod game_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/abi.Game/GetStream");
+            let path = http::uri::PathAndQuery::from_static("/proto.Game/GetStream");
             self.inner
                 .streaming(request.into_streaming_request(), path, codec)
                 .await
@@ -268,8 +288,8 @@ pub mod game_server {
     #[derive(Debug)]
     pub struct GameServer<T: Game> {
         inner: _Inner<T>,
-        accept_compression_encodings: (),
-        send_compression_encodings: (),
+        accept_compression_encodings: EnabledCompressionEncodings,
+        send_compression_encodings: EnabledCompressionEncodings,
     }
     struct _Inner<T>(Arc<T>);
     impl<T: Game> GameServer<T> {
@@ -290,6 +310,18 @@ pub mod game_server {
         {
             InterceptedService::new(Self::new(inner), interceptor)
         }
+        /// Enable decompressing requests with the given encoding.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.accept_compression_encodings.enable(encoding);
+            self
+        }
+        /// Compress responses with the given encoding, if the client supports it.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.send_compression_encodings.enable(encoding);
+            self
+        }
     }
     impl<T, B> tonic::codegen::Service<http::Request<B>> for GameServer<T>
     where
@@ -306,7 +338,7 @@ pub mod game_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/abi.Game/Login" => {
+                "/proto.Game/Login" => {
                     #[allow(non_camel_case_types)]
                     struct LoginSvc<T: Game>(pub Arc<T>);
                     impl<T: Game> tonic::server::UnaryService<super::LoginRequest> for LoginSvc<T> {
@@ -337,7 +369,7 @@ pub mod game_server {
                     };
                     Box::pin(fut)
                 }
-                "/abi.Game/GetStream" => {
+                "/proto.Game/GetStream" => {
                     #[allow(non_camel_case_types)]
                     struct GetStreamSvc<T: Game>(pub Arc<T>);
                     impl<T: Game> tonic::server::StreamingService<super::Request> for GetStreamSvc<T> {
@@ -401,7 +433,7 @@ pub mod game_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Game> tonic::transport::NamedService for GameServer<T> {
-        const NAME: &'static str = "abi.Game";
+    impl<T: Game> tonic::server::NamedService for GameServer<T> {
+        const NAME: &'static str = "proto.Game";
     }
 }
