@@ -5,3 +5,5 @@ use tshooter
 use hellomodule
 
 use learning
+
+use trace
