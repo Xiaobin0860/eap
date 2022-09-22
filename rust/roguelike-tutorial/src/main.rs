@@ -2,7 +2,7 @@ use rltk::{GameState, Rltk, RltkBuilder, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
 
-type COL = (u8, u8, u8);
+type Col = (u8, u8, u8);
 
 fn main() -> rltk::BError {
     let context = RltkBuilder::simple80x50()
@@ -52,7 +52,7 @@ struct Renderable {
 }
 
 impl Renderable {
-    fn new(c: char, fg: COL, bg: COL) -> Self {
+    fn new(c: char, fg: Col, bg: Col) -> Self {
         Self {
             glyph: rltk::to_cp437(c),
             fg: RGB::named(fg),
