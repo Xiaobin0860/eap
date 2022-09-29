@@ -24,15 +24,12 @@ fn is_fliped_string(s1: String, s2: String) -> bool {
     if s1.len() != s2.len() {
         return false;
     }
-    let r1 = s1.as_str();
-    let r2 = s2.as_str();
-    let s = format!("{}{}", r1, r1);
-    let vs: Vec<_> = s.split(r2).collect();
-    match vs.len() {
-        3 => true,
-        2 => r2.starts_with(vs[1]) && r2.ends_with(vs[0]),
-        _ => false,
-    }
+    // let r1 = s1.as_str();
+    // let r2 = s2.as_str();
+    // let s = format!("{r1}{r1}");
+    // s.contains(r2)
+    let s = s1.to_owned() + &s1;
+    s.contains(&s2)
 }
 
 #[cfg(test)]
