@@ -6,4 +6,5 @@ members = [
     "tshooter",
     "roguelike-tutorial",
     "leetcode",
+    "ys",
 ]
