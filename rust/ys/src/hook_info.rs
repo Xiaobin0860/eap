@@ -63,11 +63,15 @@ impl HookInfo {
     fn search_methods(&self, lines: &Vec<String>, info: &mut TypeInfo) {
         let re = &format!(
             r"{}_(_[c]+tor.*|[a-zA-Z]+)(, \(|__Method|_\d+, \()",
-            info.ename
+            &info.ename
         );
+        let pattern = &format!("({} * __this,", &info.ename);
         let re = Regex::new(re).unwrap();
         for line in lines.iter() {
-            if re.is_match(line) {
+            if !line.contains(&info.ename) {
+                continue;
+            }
+            if line.contains(pattern) || re.is_match(line) {
                 info.methods.push(line.to_owned());
             }
         }

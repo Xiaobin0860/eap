@@ -8,6 +8,14 @@ use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ys::HookInfo;
 
+static UNENC_MODULES: &[&str] = &[
+    "Application",
+    "GameManager",
+    "MonoInLevelMapPage",
+    "CameraState",
+    "Miscs",
+];
+
 /// Program to find ys-gc offsets
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -53,14 +61,19 @@ fn main() -> Result<()> {
         .map(|s| s.unwrap())
         .collect();
     debug!("func_lines size: {}", lines.len());
-    let mut app = io::BufWriter::new(fs::File::create(od.join("Application.h"))?);
-    for line in lines.iter() {
-        if line.contains(", Application_") {
-            app.write_all(line.as_bytes())?;
-            app.write_all("\n".as_bytes())?;
+    for m in UNENC_MODULES {
+        let fname = format!("{}.h", m);
+        let pattern = &format!(r", {}_\w+(, \(|\))", m);
+        let re = Regex::new(pattern)?;
+        let mut w = io::BufWriter::new(fs::File::create(od.join(fname))?);
+        for line in lines.iter() {
+            if re.is_match(line) {
+                w.write_all(line.as_bytes())?;
+                w.write_all("\n".as_bytes())?;
+            }
         }
+        w.flush()?;
     }
-    app.flush()?;
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
         let re = Regex::new(&pattern.mp)?;
