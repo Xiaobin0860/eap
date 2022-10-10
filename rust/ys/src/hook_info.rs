@@ -62,7 +62,7 @@ impl HookInfo {
 
     fn search_methods(&self, lines: &Vec<String>, info: &mut TypeInfo) {
         let re = &format!(
-            r"{}_(_[c]+tor.*|[a-zA-Z]+)(, \(|__Method|_\d+, \()",
+            r"{}_(_[c]+tor.*|[a-zA-Z]+)(_\d+){{0,1}}(, \(|__Method)",
             &info.ename
         );
         let pattern = &format!("({} * __this,", &info.ename);
