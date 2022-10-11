@@ -61,18 +61,18 @@ impl HookInfo {
     }
 
     fn search_methods(&self, lines: &Vec<String>, info: &mut TypeInfo) {
-        let re = &format!(
-            r"{}_(_[c]+tor.*|[a-zA-Z]+)(_\d+){{0,1}}(, \(|__Method)",
-            &info.ename
-        );
-        let pattern = &format!("({} * __this,", &info.ename);
+        let re = &format!(r", {}_\w+, \(", &info.ename);
         let re = Regex::new(re).unwrap();
+        let mut ok = false;
         for line in lines.iter() {
-            if !line.contains(&info.ename) {
-                continue;
-            }
-            if line.contains(pattern) || re.is_match(line) {
+            if ok && line.starts_with("DO_APP_FUNC_METHODINFO") {
                 info.methods.push(line.to_owned());
+                ok = false;
+            } else if re.is_match(line) {
+                info.methods.push(line.to_owned());
+                ok = true;
+            } else {
+                ok = false;
             }
         }
     }
