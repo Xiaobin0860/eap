@@ -42,13 +42,13 @@ impl Display for TypeInfo {
 }
 
 impl HookInfo {
-    pub fn search_type(&mut self, re: &Regex, lines: &Vec<String>) -> Option<TypeInfo> {
+    pub fn search_type<'a>(&mut self, re: &Regex, lines: &Vec<String>) -> Option<TypeInfo> {
         for line in lines.iter() {
             if re.is_match(line) {
                 trace!("{} match line {}", self.name, line);
                 //DO_APP_FUNC(0x030AC1E0, void, FFEKNPFBNFH__ctor_2, (FFEKNPFBNFH * __this,
                 let ss: Vec<_> = line.split(',').collect();
-                let ss: Vec<_> = ss[3].trim_start().split(' ').collect();
+                let ss: Vec<_> = ss[2].split('_').collect();
                 let ename = &ss[0][1..];
                 debug!("{} => {}", self.name, ename);
                 let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
@@ -58,6 +58,28 @@ impl HookInfo {
             }
         }
         None
+    }
+
+    pub fn search_types<'a>(
+        &mut self,
+        re: &Regex,
+        types: &'a str,
+        lines: &Vec<String>,
+    ) -> Option<TypeInfo> {
+        if let Some(mat) = re.find(types) {
+            //struct NEMKAPOLJCG__Fields {
+            let ss: Vec<_> = types[mat.start()..mat.end()].split('{').collect();
+            let ss: Vec<_> = ss[0].split(' ').collect();
+            let ss: Vec<_> = ss[1].split('_').collect();
+            let ename = ss[0];
+            debug!("{} => {}", self.name, ename);
+            let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
+            self.ename = Some(ename.to_owned());
+            self.search_methods(lines, &mut info);
+            Some(info)
+        } else {
+            None
+        }
     }
 
     fn search_methods(&self, lines: &Vec<String>, info: &mut TypeInfo) {

@@ -14,6 +14,10 @@ static UNENC_MODULES: &[&str] = &[
     "MonoInLevelMapPage",
     "CameraState",
     "Miscs",
+    "CriwareMediaPlayer",
+    "LuaEnv",
+    "Lua_xlua",
+    "LuaManager",
 ];
 
 /// Program to find ys-gc offsets
@@ -54,6 +58,8 @@ fn main() -> Result<()> {
     let patterns_string = fs::read_to_string(patterns_file)?;
     let mut patterns: Vec<HookInfo> = serde_json::from_str(&patterns_string)?;
     debug!("patterns count: {}", patterns.len());
+    let types_content = fs::read_to_string(types_file)?;
+    let types = types_content.as_str();
 
     let lines: Vec<String> = io::BufReader::new(fs::File::open(funcs_file)?)
         .lines()
@@ -76,17 +82,31 @@ fn main() -> Result<()> {
     }
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
-        let re = Regex::new(&pattern.mp)?;
-        let info = &pattern.search_type(&re, &lines).unwrap();
-        let out = &od.join(format!("{}.h", &info.name));
-        debug!("{info}, out={out:?}");
-        let mut w = io::BufWriter::new(fs::File::create(out)?);
-        for l in info.methods.iter() {
-            let l = l.replace(&info.ename, &info.name);
-            w.write_all(l.as_bytes())?;
-            w.write_all("\n".as_bytes())?;
+        if let Some(tp) = &pattern.tp {
+            let re = Regex::new(tp)?;
+            let info = &pattern.search_types(&re, types, &lines).unwrap();
+            let out = &od.join(format!("{}.h", &info.name));
+            debug!("{info}, out={out:?}");
+            let mut w = io::BufWriter::new(fs::File::create(out)?);
+            for l in info.methods.iter() {
+                let l = l.replace(&info.ename, &info.name);
+                w.write_all(l.as_bytes())?;
+                w.write_all("\n".as_bytes())?;
+            }
+            w.flush()?;
+        } else {
+            let re = Regex::new(&pattern.mp)?;
+            let info = &pattern.search_type(&re, &lines).unwrap();
+            let out = &od.join(format!("{}.h", &info.name));
+            debug!("{info}, out={out:?}");
+            let mut w = io::BufWriter::new(fs::File::create(out)?);
+            for l in info.methods.iter() {
+                let l = l.replace(&info.ename, &info.name);
+                w.write_all(l.as_bytes())?;
+                w.write_all("\n".as_bytes())?;
+            }
+            w.flush()?;
         }
-        w.flush()?;
     }
 
     Ok(())
