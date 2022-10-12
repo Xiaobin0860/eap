@@ -8,6 +8,7 @@ pub struct HookInfo {
     pub name: String,
     pub mp: String,
     pub tp: Option<String>,
+    pub xp: Option<String>,
     pub ename: Option<String>,
     pub methods: Option<Vec<MethodInfo>>,
 }
@@ -42,6 +43,14 @@ impl Display for TypeInfo {
 }
 
 impl HookInfo {
+    pub fn new(name: String, mp: String) -> Self {
+        Self {
+            name,
+            mp,
+            ..Default::default()
+        }
+    }
+
     pub fn search_type<'a>(&mut self, re: &Regex, lines: &Vec<&str>) -> Option<TypeInfo> {
         for line in lines.iter() {
             if re.is_match(line) {

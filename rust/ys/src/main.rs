@@ -1,9 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
 use regex::Regex;
+use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
+use strfmt::strfmt;
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ys::HookInfo;
@@ -91,6 +93,7 @@ fn main() -> Result<()> {
         }
         w.flush()?;
     }
+    let mut xps = Vec::new();
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
         let info = &if let Some(tp) = pattern.tp.as_ref() {
@@ -107,6 +110,13 @@ fn main() -> Result<()> {
             let re = Regex::new(&pattern.mp)?;
             pattern.search_type(&re, &lines).unwrap()
         };
+        if let Some(xp) = pattern.xp.as_ref() {
+            let xp = xp.as_str();
+            let ss: Vec<_> = xp.split('-').collect();
+            let mut vars = HashMap::new();
+            vars.insert("x".to_string(), info.ename.clone());
+            xps.push(HookInfo::new(ss[0].to_owned(), strfmt(ss[1], &vars)?));
+        }
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         let mut w = io::BufWriter::new(fs::File::create(out)?);
@@ -117,6 +127,19 @@ fn main() -> Result<()> {
         }
         w.flush()?;
     }
-
+    for pattern in xps.iter_mut() {
+        trace!("{pattern:?}");
+        let re = Regex::new(&pattern.mp)?;
+        let info = pattern.search_type(&re, &lines).unwrap();
+        let out = &od.join(format!("{}.h", &info.name));
+        debug!("{info}, out={out:?}");
+        let mut w = io::BufWriter::new(fs::File::create(out)?);
+        for l in info.methods.iter() {
+            let l = l.replace(&info.ename, &info.name);
+            w.write_all(l.as_bytes())?;
+            w.write_all("\n".as_bytes())?;
+        }
+        w.flush()?;
+    }
     Ok(())
 }
