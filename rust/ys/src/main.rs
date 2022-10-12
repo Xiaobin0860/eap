@@ -1,9 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
 use regex::Regex;
+use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-use std::{fs, io::BufRead};
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ys::HookInfo;
@@ -18,6 +18,20 @@ static UNENC_MODULES: &[&str] = &[
     "LuaEnv",
     "Lua_xlua",
     "LuaManager",
+    "MonoInLevelPlayerProfilePage",
+    "MonoFriendInformationDialog",
+    "EnviroSky",
+    "Camera",
+    "GameObject",
+    "Transform",
+    "Component",
+    "Object",
+    "Vector3",
+    "Renderer",
+    "Mathf",
+    "Input",
+    "Marshal",
+    "LocalEntityInfoData",
 ];
 
 /// Program to find ys-gc offsets
@@ -60,12 +74,9 @@ fn main() -> Result<()> {
     debug!("patterns count: {}", patterns.len());
     let types_content = fs::read_to_string(types_file)?;
     let types = types_content.as_str();
-
-    let lines: Vec<String> = io::BufReader::new(fs::File::open(funcs_file)?)
-        .lines()
-        .into_iter()
-        .map(|s| s.unwrap())
-        .collect();
+    let funcs_content = fs::read_to_string(funcs_file)?;
+    let funcs = funcs_content.as_str();
+    let lines: Vec<_> = funcs.lines().collect();
     debug!("func_lines size: {}", lines.len());
     for m in UNENC_MODULES {
         let fname = format!("{}.h", m);
@@ -82,31 +93,29 @@ fn main() -> Result<()> {
     }
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
-        if let Some(tp) = &pattern.tp {
-            let re = Regex::new(tp)?;
-            let info = &pattern.search_types(&re, types, &lines).unwrap();
-            let out = &od.join(format!("{}.h", &info.name));
-            debug!("{info}, out={out:?}");
-            let mut w = io::BufWriter::new(fs::File::create(out)?);
-            for l in info.methods.iter() {
-                let l = l.replace(&info.ename, &info.name);
-                w.write_all(l.as_bytes())?;
-                w.write_all("\n".as_bytes())?;
+        let info = &if let Some(tp) = pattern.tp.as_ref() {
+            let tp = tp.as_str();
+            if tp.starts_with('-') {
+                trace!("re={}", &tp[1..]);
+                let re = Regex::new(&tp[1..])?;
+                pattern.search_types(&re, funcs, &lines).unwrap()
+            } else {
+                let re = Regex::new(tp)?;
+                pattern.search_types(&re, types, &lines).unwrap()
             }
-            w.flush()?;
         } else {
             let re = Regex::new(&pattern.mp)?;
-            let info = &pattern.search_type(&re, &lines).unwrap();
-            let out = &od.join(format!("{}.h", &info.name));
-            debug!("{info}, out={out:?}");
-            let mut w = io::BufWriter::new(fs::File::create(out)?);
-            for l in info.methods.iter() {
-                let l = l.replace(&info.ename, &info.name);
-                w.write_all(l.as_bytes())?;
-                w.write_all("\n".as_bytes())?;
-            }
-            w.flush()?;
+            pattern.search_type(&re, &lines).unwrap()
+        };
+        let out = &od.join(format!("{}.h", &info.name));
+        debug!("{info}, out={out:?}");
+        let mut w = io::BufWriter::new(fs::File::create(out)?);
+        for l in info.methods.iter() {
+            let l = l.replace(&info.ename, &info.name);
+            w.write_all(l.as_bytes())?;
+            w.write_all("\n".as_bytes())?;
         }
+        w.flush()?;
     }
 
     Ok(())
