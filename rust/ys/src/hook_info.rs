@@ -1,6 +1,9 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::fs;
+use std::io::{self, Write};
+use std::path::PathBuf;
 use tracing::{debug, trace};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -18,6 +21,7 @@ pub struct TypeInfo {
     pub name: String,
     pub ename: String,
     pub methods: Vec<String>,
+    pub typdef: String,
 }
 
 impl TypeInfo {
@@ -26,7 +30,22 @@ impl TypeInfo {
             name,
             ename,
             methods: Vec::new(),
+            ..Default::default()
         }
+    }
+
+    pub fn write_to_file(&self, out: &PathBuf) {
+        let mut w = io::BufWriter::new(fs::File::create(out).unwrap());
+        w.write_all("// ".as_bytes()).unwrap();
+        w.write_all(self.ename.as_bytes()).unwrap();
+        w.write_all("\n".as_bytes()).unwrap();
+        w.write_all(self.typdef.as_bytes()).unwrap();
+        w.write_all("\n".as_bytes()).unwrap();
+        for l in self.methods.iter() {
+            w.write_all(l.as_bytes()).unwrap();
+            w.write_all("\n".as_bytes()).unwrap();
+        }
+        w.flush().unwrap();
     }
 }
 
@@ -51,7 +70,12 @@ impl HookInfo {
         }
     }
 
-    pub fn search_type<'a>(&mut self, re: &Regex, lines: &Vec<&str>) -> Option<TypeInfo> {
+    pub fn search_type_from_funclines(
+        &mut self,
+        re: &Regex,
+        lines: &Vec<&str>,
+        types: &str,
+    ) -> Option<TypeInfo> {
         for line in lines.iter() {
             if re.is_match(line) {
                 trace!("{} match line {}", self.name, line);
@@ -63,23 +87,23 @@ impl HookInfo {
                 let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
                 self.ename = Some(ename.to_owned());
                 self.search_methods(lines, &mut info);
+                self.search_type(types, &mut info);
                 return Some(info);
             }
         }
         None
     }
 
-    pub fn search_types<'a>(
+    pub fn search_type_from_typestr(
         &mut self,
         re: &Regex,
-        types: &'a str,
+        types: &str,
         lines: &Vec<&str>,
     ) -> Option<TypeInfo> {
         if let Some(mat) = re.find(types) {
             //struct NEMKAPOLJCG__Fields {
             //struct __declspec(align(8)) PFIDMOFNNFJ__Fields {
             //struct DDPHHPLKABA LHBAOFDMMFN;
-            //DO_APP_FUNC(0x009724B0, void, MLMBKNNFJEI_ReturnToObjectPool, (MLMBKNNFJEI * __this, MethodInfo * method));
             let mat = mat.as_str();
             let ss: Vec<_> = mat.split('\n').collect();
             let mat = ss[0];
@@ -88,10 +112,6 @@ impl HookInfo {
                 let ss: Vec<_> = mat.split("__Fields").collect();
                 let ss: Vec<_> = ss[0].split(' ').collect();
                 ss[ss.len() - 1]
-            } else if mat.starts_with('D') {
-                let ss: Vec<_> = mat.split(',').collect();
-                let ss: Vec<_> = ss[2].split('_').collect();
-                &ss[0][1..]
             } else {
                 let ss: Vec<_> = mat.split(' ').collect();
                 ss[1]
@@ -100,6 +120,34 @@ impl HookInfo {
             let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
             self.ename = Some(ename.to_owned());
             self.search_methods(lines, &mut info);
+            self.search_type(types, &mut info);
+            Some(info)
+        } else {
+            None
+        }
+    }
+
+    pub fn search_type_from_funcstr(
+        &mut self,
+        re: &Regex,
+        funcs: &str,
+        lines: &Vec<&str>,
+        types: &str,
+    ) -> Option<TypeInfo> {
+        if let Some(mat) = re.find(funcs) {
+            //DO_APP_FUNC(0x009724B0, void, MLMBKNNFJEI_ReturnToObjectPool, (MLMBKNNFJEI * __this, MethodInfo * method));
+            let mat = mat.as_str();
+            let ss: Vec<_> = mat.split('\n').collect();
+            let mat = ss[0];
+            trace!("mat={mat}");
+            let ss: Vec<_> = mat.split(',').collect();
+            let ss: Vec<_> = ss[2].split('_').collect();
+            let ename = &ss[0][1..];
+            debug!("{} => {}", self.name, ename);
+            let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
+            self.ename = Some(ename.to_owned());
+            self.search_methods(lines, &mut info);
+            self.search_type(types, &mut info);
             Some(info)
         } else {
             None
@@ -112,14 +160,22 @@ impl HookInfo {
         let mut ok = false;
         for line in lines {
             if ok && line.starts_with("DO_APP_FUNC_METHODINFO") {
-                info.methods.push((*line).to_owned());
+                info.methods.push(line.replace(&info.ename, &self.name));
                 ok = false;
             } else if re.is_match(line) {
-                info.methods.push((*line).to_owned());
+                info.methods.push(line.replace(&info.ename, &self.name));
                 ok = true;
             } else {
                 ok = false;
             }
+        }
+    }
+
+    fn search_type(&self, types: &str, info: &mut TypeInfo) {
+        let re = &format!(r"struct {}__Fields \{{\n([^}}]*\n)*\}};", &info.ename);
+        let re = Regex::new(re).unwrap();
+        if let Some(mat) = re.find(types) {
+            info.typdef = mat.as_str().replace(&info.ename, &self.name);
         }
     }
 }

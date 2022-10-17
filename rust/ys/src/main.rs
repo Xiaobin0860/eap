@@ -10,57 +10,6 @@ use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ys::HookInfo;
 
-static UNENC_MODULES: &[&str] = &[
-    "Application",
-    "GameManager",
-    "MonoInLevelMapPage",
-    "CameraState",
-    "Miscs",
-    "CriwareMediaPlayer",
-    "LuaEnv",
-    "Lua_xlua",
-    "LuaManager",
-    "MonoInLevelPlayerProfilePage",
-    "MonoFriendInformationDialog",
-    "EnviroSky",
-    "Camera",
-    "GameObject",
-    "Transform",
-    "Component",
-    "Object",
-    "Vector3",
-    "Renderer",
-    "Mathf",
-    "Input",
-    "Marshal",
-    "LocalEntityInfoData",
-    "Material",
-    "Text",
-    "Slider",
-    "Sprite",
-    "NativeGallery",
-    "WorldShiftManager",
-    "ActorUtils",
-    "Notify",
-    "Utils",
-    "MonoMiniMap",
-    "MonoInLevelMainPage",
-    "RenderSettings",
-    "RectTransformUtility",
-    "Cursor",
-    "Rigidbody",
-    "Time",
-    "Screen",
-    "Animator",
-    "Extension",
-    "Behaviour",
-    "Quaternion",
-    "RectTransform",
-    "Canvas",
-    "LevelTimeManager",
-    "Singleton",
-];
-
 /// Program to find ys-gc offsets
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -94,6 +43,10 @@ fn main() -> Result<()> {
         .join("appdata");
     let funcs_file = &app_dir.join("il2cpp-functions.h");
     let types_file = &app_dir.join("il2cpp-types.h");
+    let unencs_file = &rys.join("unencs.json");
+    let unencs_string = fs::read_to_string(unencs_file)?;
+    let unencs: Vec<String> = serde_json::from_str(&unencs_string)?;
+    debug!("unencs count: {}", unencs.len());
     let patterns_file = &rys.join("patterns.json");
     trace!("patterns_file={patterns_file:?}, funcs_file={funcs_file:?}, types_file={types_file:?}");
     let patterns_string = fs::read_to_string(patterns_file)?;
@@ -105,7 +58,7 @@ fn main() -> Result<()> {
     let funcs = funcs_content.as_str();
     let lines: Vec<_> = funcs.lines().collect();
     debug!("func_lines size: {}", lines.len());
-    for m in UNENC_MODULES {
+    for m in unencs.iter() {
         let fname = format!("{}.h", m);
         let pattern = &format!(r", {}_\w+(, \(|\))", m);
         let re = Regex::new(pattern)?;
@@ -126,14 +79,20 @@ fn main() -> Result<()> {
             if tp.starts_with('-') {
                 trace!("re={}", &tp[1..]);
                 let re = Regex::new(&tp[1..])?;
-                pattern.search_types(&re, funcs, &lines).unwrap()
+                pattern
+                    .search_type_from_funcstr(&re, funcs, &lines, types)
+                    .unwrap()
             } else {
                 let re = Regex::new(tp)?;
-                pattern.search_types(&re, types, &lines).unwrap()
+                pattern
+                    .search_type_from_typestr(&re, types, &lines)
+                    .unwrap()
             }
         } else {
             let re = Regex::new(&pattern.mp)?;
-            pattern.search_type(&re, &lines).unwrap()
+            pattern
+                .search_type_from_funclines(&re, &lines, types)
+                .unwrap()
         };
         if let Some(xp) = pattern.xp.as_ref() {
             let xp = xp.as_str();
@@ -144,27 +103,17 @@ fn main() -> Result<()> {
         }
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
-        let mut w = io::BufWriter::new(fs::File::create(out)?);
-        for l in info.methods.iter() {
-            let l = l.replace(&info.ename, &info.name);
-            w.write_all(l.as_bytes())?;
-            w.write_all("\n".as_bytes())?;
-        }
-        w.flush()?;
+        info.write_to_file(out);
     }
     for pattern in xps.iter_mut() {
         trace!("{pattern:?}");
         let re = Regex::new(&pattern.mp)?;
-        let info = pattern.search_type(&re, &lines).unwrap();
+        let info = pattern
+            .search_type_from_funclines(&re, &lines, types)
+            .unwrap();
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
-        let mut w = io::BufWriter::new(fs::File::create(out)?);
-        for l in info.methods.iter() {
-            let l = l.replace(&info.ename, &info.name);
-            w.write_all(l.as_bytes())?;
-            w.write_all("\n".as_bytes())?;
-        }
-        w.flush()?;
+        info.write_to_file(out);
     }
     Ok(())
 }
