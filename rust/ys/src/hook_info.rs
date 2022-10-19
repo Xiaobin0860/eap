@@ -36,9 +36,6 @@ impl TypeInfo {
 
     pub fn write_to_file(&self, out: &PathBuf) {
         let mut w = io::BufWriter::new(fs::File::create(out).unwrap());
-        w.write_all("// ".as_bytes()).unwrap();
-        w.write_all(self.ename.as_bytes()).unwrap();
-        w.write_all("\n".as_bytes()).unwrap();
         w.write_all(self.typdef.as_bytes()).unwrap();
         w.write_all("\n".as_bytes()).unwrap();
         for l in self.methods.iter() {

@@ -3193,4 +3193,5 @@ dependencies = [
  "strfmt",
  "tracing",
  "tracing-subscriber",
+ "walkdir",
 ]
