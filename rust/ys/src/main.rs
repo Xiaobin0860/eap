@@ -9,8 +9,7 @@ use strfmt::strfmt;
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use walkdir::WalkDir;
-use ys::AppFunc;
-use ys::HookInfo;
+use ys::{AppFunc, FuncName, HookInfo};
 
 /// Program to find ys-gc offsets
 #[derive(Parser, Debug)]
@@ -76,6 +75,22 @@ fn main() -> Result<()> {
     }
     let mut name_map = HashMap::new();
     let mut xps = Vec::new();
+    //找加密方法名.
+    let fnames_file = &rys.join("fnames.json");
+    let fnames_string = fs::read_to_string(fnames_file)?;
+    let fnames: Vec<FuncName> = serde_json::from_str(&fnames_string)?;
+    debug!("fnames count: {}", fnames.len());
+    for fname in fnames.iter() {
+        let re = Regex::new(&fname.fp)?;
+        let mat = re.find(funcs).unwrap().as_str();
+        //GameObject *, MihoyoRubyTextMeshEffect_MCIBIEJLHJB_CNMMAFCJAKH, (
+        let ename = *mat.split(',').collect::<Vec<_>>()[1]
+            .split('_')
+            .collect::<Vec<_>>()
+            .last()
+            .unwrap();
+        name_map.insert(fname.name.clone(), ename.to_owned());
+    }
     //找加密
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
@@ -172,6 +187,7 @@ fn main() -> Result<()> {
             trace!("{hook:?}");
             let re = Regex::new(&hook.mp)?;
             let mat = re.find(contents).unwrap().as_str();
+            trace!("{mat}");
             //(0x009724B0,
             let offset = mat.split(',').collect::<Vec<_>>()[0]
                 .split('(')

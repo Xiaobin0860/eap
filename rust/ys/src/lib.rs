@@ -3,3 +3,6 @@ pub use hook_info::*;
 
 mod app_func;
 pub use app_func::*;
+
+mod func_name;
+pub use func_name::*;
