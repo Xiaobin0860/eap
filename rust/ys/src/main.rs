@@ -4,7 +4,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use strfmt::strfmt;
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -75,20 +75,13 @@ fn main() -> Result<()> {
     }
     let mut name_map = HashMap::new();
     let mut xps = Vec::new();
-    //找加密方法名.
+    //找加密串.
     let fnames_file = &rys.join("fnames.json");
     let fnames_string = fs::read_to_string(fnames_file)?;
     let fnames: Vec<FuncName> = serde_json::from_str(&fnames_string)?;
     debug!("fnames count: {}", fnames.len());
     for fname in fnames.iter() {
-        let re = Regex::new(&fname.fp)?;
-        let mat = re.find(funcs).unwrap().as_str();
-        //GameObject *, MihoyoRubyTextMeshEffect_MCIBIEJLHJB_CNMMAFCJAKH, (
-        let ename = *mat.split(',').collect::<Vec<_>>()[1]
-            .split('_')
-            .collect::<Vec<_>>()
-            .last()
-            .unwrap();
+        let ename = fname.search_ename(funcs);
         name_map.insert(fname.name.clone(), ename.to_owned());
     }
     //找加密
@@ -140,25 +133,36 @@ fn main() -> Result<()> {
         info.write_to_file(out);
     }
     //替换密文
-    trace!("rep str in {} ...", od.display());
-    for entry in WalkDir::new(od).into_iter().filter_map(|e| e.ok()) {
+    rep_encs(od, &name_map);
+    //再次找加密串.
+    let beebyte_dir = &rys.join("beebyte");
+    for entry in WalkDir::new(beebyte_dir).into_iter().filter_map(|e| e.ok()) {
         let f = entry.path();
         trace!("{}", f.display());
         let ext = f.extension();
-        if ext.is_none() || ext.unwrap().to_str().unwrap() != "h" {
+        if ext.is_none() || ext.unwrap().to_str().unwrap() != "json" {
             continue;
         }
-        debug!("rep enc str in {}", f.display());
-        let mut s = fs::read_to_string(f)?;
-        for (k, v) in name_map.iter() {
-            s = s.replace(v, k);
+        let name = f.file_name().unwrap().to_str().unwrap();
+        let cname = name.split('.').collect::<Vec<_>>()[0];
+        let h = &od.join(name.replace(".json", ".h"));
+        trace!("{} cname={cname}, h={}", f.display(), h.display());
+        let contents = fs::read_to_string(h)?;
+        let contents = contents.as_str();
+        let fnames_string = fs::read_to_string(f)?;
+        let fnames: Vec<FuncName> = serde_json::from_str(&fnames_string)?;
+        debug!("fnames count: {}", fnames.len());
+        for fname in fnames.iter() {
+            let ename = fname.search_ename(contents);
+            name_map.insert(fname.name.clone(), ename.to_owned());
         }
-        fs::write(f, s)?;
     }
     //保存字符串映射
     let s = serde_json::to_string_pretty(&name_map)?;
     let enc = &od.join("name_map.json");
     fs::write(enc, s)?;
+    //再次替换密文
+    rep_encs(od, &name_map);
     //找hook地址
     let hooks_dir = &rys.join("hooks");
     let out = &od.join("hook.cpp");
@@ -203,4 +207,22 @@ fn main() -> Result<()> {
     }
     w.flush()?;
     Ok(())
+}
+
+fn rep_encs(od: &PathBuf, name_map: &HashMap<String, String>) {
+    trace!("rep str in {} ...", od.display());
+    for entry in WalkDir::new(od).into_iter().filter_map(|e| e.ok()) {
+        let f = entry.path();
+        trace!("{}", f.display());
+        let ext = f.extension();
+        if ext.is_none() || ext.unwrap().to_str().unwrap() != "h" {
+            continue;
+        }
+        debug!("rep enc str in {}", f.display());
+        let mut s = fs::read_to_string(f).unwrap();
+        for (k, v) in name_map.iter() {
+            s = s.replace(v, k);
+        }
+        fs::write(f, s).unwrap();
+    }
 }
