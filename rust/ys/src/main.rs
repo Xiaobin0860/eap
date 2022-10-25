@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
         }
         w.flush()?;
     }
-    let mut name_map = HashMap::new();
+    let mut name_map = BTreeMap::new();
     let mut xps = Vec::new();
     //找加密串.
     let fnames_file = &rys.join("fnames.json");
@@ -107,14 +107,13 @@ fn main() -> Result<()> {
                 .search_type_from_funclines(&re, &lines, types)
                 .unwrap()
         };
+        name_map.insert(info.name.clone(), info.ename.clone());
         if let Some(xp) = pattern.xp.as_ref() {
             let xp = xp.as_str();
             let ss: Vec<_> = xp.split('-').collect();
             let mut vars = HashMap::new();
             vars.insert("x".to_string(), info.ename.clone());
             xps.push(HookInfo::new(ss[0].to_owned(), strfmt(ss[1], &vars)?));
-        } else {
-            name_map.insert(info.name.clone(), info.ename.clone());
         }
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
@@ -192,16 +191,29 @@ fn main() -> Result<()> {
             let re = Regex::new(&hook.mp)?;
             let mat = re.find(contents).unwrap().as_str();
             trace!("{mat}");
-            //(0x009724B0,
-            let offset = mat.split(',').collect::<Vec<_>>()[0]
-                .split('(')
-                .collect::<Vec<_>>()[1];
-            hook.offset = Some(offset.into());
+            //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
+            let ss = mat.split(',').collect::<Vec<_>>();
+            let offset = ss[0].split('(').collect::<Vec<_>>()[1];
             let mut vars = HashMap::new();
             vars.insert("x".to_string(), offset);
             let s = strfmt(&hook.tp, &vars)?;
             w.write_all(s.as_bytes())?;
             w.write_all("\n".as_bytes())?;
+            if let Some(mi) = hook.mi.as_ref() {
+                let fname = &ss[2][1..];
+                let mp = &format!("DO_APP_FUNC_METHODINFO.*{fname}");
+                let re = Regex::new(mp)?;
+                let mat = re.find(contents).unwrap().as_str();
+                trace!("{mat}");
+                //DO_APP_FUNC_METHODINFO(0x0A4B8E70,
+                let offset = mat.split(',').collect::<Vec<_>>()[0]
+                    .split('(')
+                    .collect::<Vec<_>>()[1];
+                vars.insert("x".to_string(), offset);
+                let s = strfmt(mi, &vars)?;
+                w.write_all(s.as_bytes())?;
+                w.write_all("\n".as_bytes())?;
+            }
         }
         w.write_all("\n\n".as_bytes())?;
     }
@@ -209,7 +221,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn rep_encs(od: &PathBuf, name_map: &HashMap<String, String>) {
+fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
     trace!("rep str in {} ...", od.display());
     for entry in WalkDir::new(od).into_iter().filter_map(|e| e.ok()) {
         let f = entry.path();

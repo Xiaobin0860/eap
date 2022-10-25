@@ -37,7 +37,7 @@ impl FuncName {
             let ss = mat.split(',').collect::<Vec<_>>()[1]
                 .split('_')
                 .collect::<Vec<_>>();
-            let nre = Regex::new(r", \w+_\d, \(").unwrap();
+            let nre = Regex::new(r", \w+_\d+, \(").unwrap();
             if nre.is_match(mat) {
                 //void, VCHumanoidMove_IOBHMHCNEPD_1, (
                 ss[ss.len() - 2]

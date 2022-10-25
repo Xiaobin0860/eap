@@ -4,6 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct AppFunc {
     pub tp: String,
     pub mp: String,
-    pub xp: Option<String>,
-    pub offset: Option<String>,
+    pub mi: Option<String>,
 }

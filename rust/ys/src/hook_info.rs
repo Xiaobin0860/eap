@@ -101,17 +101,19 @@ impl HookInfo {
             //struct NEMKAPOLJCG__Fields {
             //struct __declspec(align(8)) PFIDMOFNNFJ__Fields {
             //struct DDPHHPLKABA LHBAOFDMMFN;
+            //struct NAJBLKFGKAI {
             let mat = mat.as_str();
             let ss: Vec<_> = mat.split('\n').collect();
             let mat = ss[0];
             trace!("mat={mat}");
-            let ename = if mat.ends_with('{') {
-                let ss: Vec<_> = mat.split("__Fields").collect();
-                let ss: Vec<_> = ss[0].split(' ').collect();
-                ss[ss.len() - 1]
+            let ename = if mat.find("__Fields").is_some() {
+                *mat.split("__Fields").collect::<Vec<_>>()[0]
+                    .split(' ')
+                    .collect::<Vec<_>>()
+                    .last()
+                    .unwrap()
             } else {
-                let ss: Vec<_> = mat.split(' ').collect();
-                ss[1]
+                mat.split(' ').collect::<Vec<_>>()[1]
             };
             debug!("{} => {}", self.name, ename);
             let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
