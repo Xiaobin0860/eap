@@ -107,7 +107,15 @@ fn main() -> Result<()> {
                 .search_type_from_funclines(&re, &lines, types)
                 .unwrap()
         };
-        name_map.insert(info.name.clone(), info.ename.clone());
+        if info.name.find('_').is_some() {
+            let names: Vec<_> = info.name.split('_').collect();
+            let enames: Vec<_> = info.ename.split('_').collect();
+            for i in 0..names.len() {
+                name_map.insert(names[i].to_owned(), enames[i].to_owned());
+            }
+        } else {
+            name_map.insert(info.name.clone(), info.ename.clone());
+        }
         if let Some(xp) = pattern.xp.as_ref() {
             let xp = xp.as_str();
             let ss: Vec<_> = xp.split('-').collect();
@@ -167,6 +175,7 @@ fn main() -> Result<()> {
     let out = &od.join("hook.cpp");
     debug!("hooks_dir={}, out={}", hooks_dir.display(), out.display());
     let mut w = io::BufWriter::new(fs::File::create(out)?);
+    w.write_all("using namespace app;\n\n".as_bytes())?;
     for entry in WalkDir::new(hooks_dir).into_iter().filter_map(|e| e.ok()) {
         let f = entry.path();
         trace!("{}", f.display());
