@@ -35,6 +35,19 @@ func minAddToMakeValid(s string) int {
 	return left + right
 }
 
+func arraySign(nums []int) int {
+	sign := 1
+	for i := 0; i < len(nums); i++ {
+		n := nums[i]
+		if n == 0 {
+			return 0
+		} else if n < 0 {
+			sign *= -1
+		}
+	}
+	return sign
+}
+
 func TestCheckOnesSegment(t *testing.T) {
 	assert.False(t, checkOnesSegment("1001"))
 	assert.True(t, checkOnesSegment("110"))
@@ -52,4 +65,10 @@ func TestMinAddToMakeValid(t *testing.T) {
 	assert.Equal(t, 0, minAddToMakeValid("()(())"))
 	assert.Equal(t, 0, minAddToMakeValid(""))
 	assert.Equal(t, 3, minAddToMakeValid(")()))"))
+}
+
+func TestArraySign(t *testing.T) {
+	assert.Equal(t, 1, arraySign([]int{-1, -2, -3, -4, 3, 2, 1}))
+	assert.Equal(t, 0, arraySign([]int{1, 5, 0, 2, -3}))
+	assert.Equal(t, -1, arraySign([]int{-1, 1, -1, 1, -1}))
 }

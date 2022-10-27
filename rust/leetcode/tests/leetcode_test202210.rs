@@ -90,6 +90,19 @@ fn min_add_to_make_valid(s: String) -> i32 {
     left + right
 }
 
+/// https://leetcode.cn/problems/sign-of-the-product-of-an-array/
+fn array_sign(nums: Vec<i32>) -> i32 {
+    let mut sign = 1;
+    for n in nums {
+        if n == 0 {
+            return 0;
+        } else if n < 0 {
+            sign *= -1;
+        }
+    }
+    sign
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -104,6 +117,7 @@ mod tests {
         assert!(!check_ones_segment("101".into()));
         assert!(!check_ones_segment("10101".into()));
     }
+
     #[test]
     fn test_min_add_to_make_valid() {
         assert_eq!(1, min_add_to_make_valid("())".into()));
@@ -112,5 +126,12 @@ mod tests {
         assert_eq!(0, min_add_to_make_valid("()(())".into()));
         assert_eq!(0, min_add_to_make_valid("".into()));
         assert_eq!(3, min_add_to_make_valid(")()))".into()));
+    }
+
+    #[test]
+    fn test_array_sign() {
+        assert_eq!(1, array_sign(vec!(-1, -2, -3, -4, 3, 2, 1)));
+        assert_eq!(0, array_sign(vec!(1, 5, 0, 2, -3)));
+        assert_eq!(-1, array_sign(vec!(-1, 1, -1, 1, -1)));
     }
 }
