@@ -36,20 +36,28 @@ fn main() -> Result<()> {
     let rys = &Path::new(&args.gd).join("rys");
     let od = &rys.join(&args.gv);
     info!("Finding {} offsets in {} od={od:?} ...", &args.gv, &args.gd);
+    let ios_od = &rys.join(format!("i{}", &args.gv));
 
     let pc_dir = &format!("PC{}", &args.gv);
-    let app_dir = &Path::new(&args.gd)
+    let ios_dir = &format!("iOS{}", &args.gv);
+    let pc_dir = &Path::new(&args.gd)
         .join(pc_dir)
         .join("inject")
         .join("appdata");
-    let funcs_file = &app_dir.join("il2cpp-functions.h");
-    let types_file = &app_dir.join("il2cpp-types.h");
+    let ios_dir = &Path::new(&args.gd)
+        .join(ios_dir)
+        .join("inject")
+        .join("appdata");
+    let funcs_file = &pc_dir.join("il2cpp-functions.h");
+    let types_file = &pc_dir.join("il2cpp-types.h");
+    let ios_funcs_file = &ios_dir.join("il2cpp-functions.h");
+    let ios_types_file = &ios_dir.join("il2cpp-types.h");
     let unencs_file = &rys.join("unencs.json");
     let unencs_string = fs::read_to_string(unencs_file)?;
     let unencs: Vec<String> = serde_json::from_str(&unencs_string)?;
     debug!("unencs count: {}", unencs.len());
     let patterns_file = &rys.join("patterns.json");
-    trace!("patterns_file={patterns_file:?}, funcs_file={funcs_file:?}, types_file={types_file:?}");
+    trace!("patterns_file={patterns_file:?}, funcs_file={funcs_file:?}, types_file={types_file:?}, ios_funcs_file={ios_funcs_file:?}, ios_types_file={ios_types_file:?}");
     let patterns_string = fs::read_to_string(patterns_file)?;
     let mut patterns: Vec<HookInfo> = serde_json::from_str(&patterns_string)?;
     debug!("patterns count: {}", patterns.len());
@@ -59,19 +67,37 @@ fn main() -> Result<()> {
     let funcs = funcs_content.as_str();
     let lines: Vec<_> = funcs.lines().collect();
     debug!("func_lines size: {}", lines.len());
+    let ios_types_content = fs::read_to_string(ios_types_file)?;
+    let ios_types = ios_types_content.as_str();
+    let ios_funcs_content = fs::read_to_string(ios_funcs_file)?;
+    let ios_funcs = ios_funcs_content.as_str();
+    let ios_lines: Vec<_> = ios_funcs.lines().collect();
+    debug!("ios_lines size: {}", lines.len());
     //未加密
     for m in unencs.iter() {
         let fname = format!("{}.h", m);
         let pattern = &format!(r", {}_\w+(, \(|\))", m);
         let re = Regex::new(pattern)?;
-        let mut w = io::BufWriter::new(fs::File::create(od.join(fname))?);
-        for line in lines.iter() {
-            if re.is_match(line) {
-                w.write_all(line.as_bytes())?;
-                w.write_all("\n".as_bytes())?;
+        {
+            let mut w = io::BufWriter::new(fs::File::create(od.join(&fname))?);
+            for line in lines.iter() {
+                if re.is_match(line) {
+                    w.write_all(line.as_bytes())?;
+                    w.write_all("\n".as_bytes())?;
+                }
             }
+            w.flush()?;
         }
-        w.flush()?;
+        {
+            let mut ios_w = io::BufWriter::new(fs::File::create(ios_od.join(&fname))?);
+            for line in ios_lines.iter() {
+                if re.is_match(line) {
+                    ios_w.write_all(line.as_bytes())?;
+                    ios_w.write_all("\n".as_bytes())?;
+                }
+            }
+            ios_w.flush()?;
+        }
     }
     let mut name_map = BTreeMap::new();
     let mut xps = Vec::new();
@@ -126,6 +152,10 @@ fn main() -> Result<()> {
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
+        //iOS
+        let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+        let out = &ios_od.join(format!("{}.h", &info.name));
+        info.write_to_file(out);
     }
     //加密二次查找
     for pattern in xps.iter_mut() {
@@ -138,9 +168,14 @@ fn main() -> Result<()> {
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
+        //iOS
+        let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+        let out = &ios_od.join(format!("{}.h", &info.name));
+        info.write_to_file(out);
     }
     //替换密文
     rep_encs(od, &name_map);
+    rep_encs(ios_od, &name_map);
     //再次找加密串.
     let beebyte_dir = &rys.join("beebyte");
     for entry in WalkDir::new(beebyte_dir).into_iter().filter_map(|e| e.ok()) {
@@ -170,8 +205,32 @@ fn main() -> Result<()> {
     fs::write(enc, s)?;
     //再次替换密文
     rep_encs(od, &name_map);
+    rep_encs(ios_od, &name_map);
     //找hook地址
     let hooks_dir = &rys.join("hooks");
+    gen_hooks(od, hooks_dir)?;
+    gen_hooks(ios_od, hooks_dir)
+}
+
+fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
+    trace!("rep str in {} ...", od.display());
+    for entry in WalkDir::new(od).into_iter().filter_map(|e| e.ok()) {
+        let f = entry.path();
+        trace!("{}", f.display());
+        let ext = f.extension();
+        if ext.is_none() || ext.unwrap().to_str().unwrap() != "h" {
+            continue;
+        }
+        debug!("rep enc str in {}", f.display());
+        let mut s = fs::read_to_string(f).unwrap();
+        for (k, v) in name_map.iter() {
+            s = s.replace(v, k);
+        }
+        fs::write(f, s).unwrap();
+    }
+}
+
+fn gen_hooks(od: &PathBuf, hooks_dir: &PathBuf) -> Result<()> {
     let out = &od.join("hook.cpp");
     debug!("hooks_dir={}, out={}", hooks_dir.display(), out.display());
     let mut w = io::BufWriter::new(fs::File::create(out)?);
@@ -228,22 +287,4 @@ fn main() -> Result<()> {
     }
     w.flush()?;
     Ok(())
-}
-
-fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
-    trace!("rep str in {} ...", od.display());
-    for entry in WalkDir::new(od).into_iter().filter_map(|e| e.ok()) {
-        let f = entry.path();
-        trace!("{}", f.display());
-        let ext = f.extension();
-        if ext.is_none() || ext.unwrap().to_str().unwrap() != "h" {
-            continue;
-        }
-        debug!("rep enc str in {}", f.display());
-        let mut s = fs::read_to_string(f).unwrap();
-        for (k, v) in name_map.iter() {
-            s = s.replace(v, k);
-        }
-        fs::write(f, s).unwrap();
-    }
 }

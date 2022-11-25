@@ -153,6 +153,13 @@ impl HookInfo {
         }
     }
 
+    pub fn isearch(&self, name: &str, ename: &str, flines: &Vec<&str>, types: &str) -> TypeInfo {
+        let mut info = TypeInfo::new(name.to_owned(), ename.to_owned());
+        self.ios_search_type(types, &mut info);
+        self.search_methods(flines, &mut info);
+        info
+    }
+
     fn search_methods(&self, lines: &[&str], info: &mut TypeInfo) {
         let re = &format!(r", {}_\w+, \(", &info.ename);
         let re = Regex::new(re).unwrap();
@@ -172,6 +179,14 @@ impl HookInfo {
 
     fn search_type(&self, types: &str, info: &mut TypeInfo) {
         let re = &format!(r"struct .*{}__Fields \{{\n([^}}]*\n)*\}};", &info.ename);
+        let re = Regex::new(re).unwrap();
+        if let Some(mat) = re.find(types) {
+            info.typdef = mat.as_str().replace(&info.ename, &self.name);
+        }
+    }
+
+    fn ios_search_type(&self, types: &str, info: &mut TypeInfo) {
+        let re = &format!(r"struct {} \{{\n([^}}]*\n)*\}};", &info.ename);
         let re = Regex::new(re).unwrap();
         if let Some(mat) = re.find(types) {
             info.typdef = mat.as_str().replace(&info.ename, &self.name);
