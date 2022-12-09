@@ -67,12 +67,15 @@ fn main() -> Result<()> {
     let funcs = funcs_content.as_str();
     let lines: Vec<_> = funcs.lines().collect();
     debug!("func_lines size: {}", lines.len());
-    let ios_types_content = fs::read_to_string(ios_types_file)?;
-    let ios_types = ios_types_content.as_str();
-    let ios_funcs_content = fs::read_to_string(ios_funcs_file)?;
-    let ios_funcs = ios_funcs_content.as_str();
-    let ios_lines: Vec<_> = ios_funcs.lines().collect();
-    debug!("ios_lines size: {}", lines.len());
+
+    // //ios
+    // let ios_types_content = fs::read_to_string(ios_types_file)?;
+    // let ios_types = ios_types_content.as_str();
+    // let ios_funcs_content = fs::read_to_string(ios_funcs_file)?;
+    // let ios_funcs = ios_funcs_content.as_str();
+    // let ios_lines: Vec<_> = ios_funcs.lines().collect();
+    // debug!("ios_lines size: {}", lines.len());
+
     //未加密
     for m in unencs.iter() {
         let fname = format!("{}.h", m);
@@ -88,16 +91,18 @@ fn main() -> Result<()> {
             }
             w.flush()?;
         }
-        {
-            let mut ios_w = io::BufWriter::new(fs::File::create(ios_od.join(&fname))?);
-            for line in ios_lines.iter() {
-                if re.is_match(line) {
-                    ios_w.write_all(line.as_bytes())?;
-                    ios_w.write_all("\n".as_bytes())?;
-                }
-            }
-            ios_w.flush()?;
-        }
+
+        // //ios
+        // {
+        //     let mut ios_w = io::BufWriter::new(fs::File::create(ios_od.join(&fname))?);
+        //     for line in ios_lines.iter() {
+        //         if re.is_match(line) {
+        //             ios_w.write_all(line.as_bytes())?;
+        //             ios_w.write_all("\n".as_bytes())?;
+        //         }
+        //     }
+        //     ios_w.flush()?;
+        // }
     }
     let mut name_map = BTreeMap::new();
     let mut xps = Vec::new();
@@ -152,10 +157,11 @@ fn main() -> Result<()> {
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
-        //iOS
-        let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
-        let out = &ios_od.join(format!("{}.h", &info.name));
-        info.write_to_file(out);
+
+        // //ios
+        // let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+        // let out = &ios_od.join(format!("{}.h", &info.name));
+        // info.write_to_file(out);
     }
     //加密二次查找
     for pattern in xps.iter_mut() {
@@ -168,10 +174,11 @@ fn main() -> Result<()> {
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
-        //iOS
-        let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
-        let out = &ios_od.join(format!("{}.h", &info.name));
-        info.write_to_file(out);
+
+        // //ios
+        // let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+        // let out = &ios_od.join(format!("{}.h", &info.name));
+        // info.write_to_file(out);
     }
     //替换密文
     rep_encs(od, &name_map);
@@ -209,7 +216,11 @@ fn main() -> Result<()> {
     //找hook地址
     let hooks_dir = &rys.join("hooks");
     gen_hooks(od, hooks_dir)?;
-    gen_hooks(ios_od, hooks_dir)
+
+    // //ios
+    // gen_hooks(ios_od, hooks_dir)?;
+
+    Ok(())
 }
 
 fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {

@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use tracing::trace;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct FuncName {
@@ -33,7 +34,9 @@ impl FuncName {
         } else {
             //查方法名
             let re = Regex::new(fp).unwrap();
+            trace!("fp={fp}");
             let mat = re.find(contents).unwrap().as_str();
+            trace!("mat={mat}");
             let ss = mat.split(',').collect::<Vec<_>>()[1]
                 .split('_')
                 .collect::<Vec<_>>();
