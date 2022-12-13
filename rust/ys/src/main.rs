@@ -261,7 +261,6 @@ fn gen_hooks(od: &PathBuf, hooks_dir: &PathBuf) -> Result<()> {
     let out = &od.join("hook.cpp");
     debug!("hooks_dir={}, out={}", hooks_dir.display(), out.display());
     let mut w = io::BufWriter::new(fs::File::create(out)?);
-    w.write_all("using namespace app;\n\n".as_bytes())?;
     for entry in WalkDir::new(hooks_dir).into_iter().filter_map(|e| e.ok()) {
         let f = entry.path();
         trace!("{}", f.display());
