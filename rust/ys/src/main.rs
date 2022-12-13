@@ -270,7 +270,7 @@ fn gen_hooks(od: &PathBuf, hooks_dir: &PathBuf) -> Result<()> {
             continue;
         }
         let name = f.file_name().unwrap().to_str().unwrap();
-        let cname = name.split('.').collect::<Vec<_>>()[0];
+        let cname = &name.replace(".json", "");
         let h = &od.join(name.replace(".json", ".h"));
         trace!("{} cname={cname}, h={}", f.display(), h.display());
         w.write_all("// ".as_bytes())?;
