@@ -68,21 +68,27 @@ fn main() -> Result<()> {
     let lines: Vec<_> = funcs.lines().collect();
     debug!("func_lines size: {}", lines.len());
 
-    // //ios
-    // let ios_types_content = fs::read_to_string(ios_types_file)?;
-    // let ios_types = ios_types_content.as_str();
-    // let ios_funcs_content = fs::read_to_string(ios_funcs_file)?;
-    // let ios_funcs = ios_funcs_content.as_str();
-    // let ios_lines: Vec<_> = ios_funcs.lines().collect();
-    // debug!("ios_lines size: {}", lines.len());
+    //ios
+    let ios_types_content = fs::read_to_string(ios_types_file).unwrap_or_default();
+    let ios_types = ios_types_content.as_str();
+    let ios_funcs_content = fs::read_to_string(ios_funcs_file).unwrap_or_default();
+    let ios_funcs = ios_funcs_content.as_str();
+    let ios_lines: Vec<_> = ios_funcs.lines().collect();
+    debug!("ios_lines size: {}", ios_lines.len());
 
     //未加密
     for m in unencs.iter() {
         let fname = format!("{}.h", m);
         let pattern = &format!(r", {}_\w+(, \(|\))", m);
         let re = Regex::new(pattern)?;
+        let td_re = &format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", m);
+        let td_re = Regex::new(td_re).unwrap();
         {
             let mut w = io::BufWriter::new(fs::File::create(od.join(&fname))?);
+            if let Some(mat) = td_re.find(types) {
+                w.write_all(mat.as_str().as_bytes())?;
+                w.write_all("\n".as_bytes())?;
+            }
             for line in lines.iter() {
                 if re.is_match(line) {
                     w.write_all(line.as_bytes())?;
@@ -92,17 +98,21 @@ fn main() -> Result<()> {
             w.flush()?;
         }
 
-        // //ios
-        // {
-        //     let mut ios_w = io::BufWriter::new(fs::File::create(ios_od.join(&fname))?);
-        //     for line in ios_lines.iter() {
-        //         if re.is_match(line) {
-        //             ios_w.write_all(line.as_bytes())?;
-        //             ios_w.write_all("\n".as_bytes())?;
-        //         }
-        //     }
-        //     ios_w.flush()?;
-        // }
+        //ios
+        if !ios_types.is_empty() {
+            let mut ios_w = io::BufWriter::new(fs::File::create(ios_od.join(&fname))?);
+            if let Some(mat) = td_re.find(ios_types) {
+                ios_w.write_all(mat.as_str().as_bytes())?;
+                ios_w.write_all("\n".as_bytes())?;
+            }
+            for line in ios_lines.iter() {
+                if re.is_match(line) {
+                    ios_w.write_all(line.as_bytes())?;
+                    ios_w.write_all("\n".as_bytes())?;
+                }
+            }
+            ios_w.flush()?;
+        }
     }
     let mut name_map = BTreeMap::new();
     let mut xps = Vec::new();
@@ -158,10 +168,12 @@ fn main() -> Result<()> {
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
 
-        // //ios
-        // let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
-        // let out = &ios_od.join(format!("{}.h", &info.name));
-        // info.write_to_file(out);
+        //ios
+        if !ios_types.is_empty() {
+            let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+            let out = &ios_od.join(format!("{}.h", &info.name));
+            info.write_to_file(out);
+        }
     }
     //加密二次查找
     for pattern in xps.iter_mut() {
@@ -175,10 +187,12 @@ fn main() -> Result<()> {
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
 
-        // //ios
-        // let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
-        // let out = &ios_od.join(format!("{}.h", &info.name));
-        // info.write_to_file(out);
+        //ios
+        if !ios_types.is_empty() {
+            let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+            let out = &ios_od.join(format!("{}.h", &info.name));
+            info.write_to_file(out);
+        }
     }
     //替换密文
     rep_encs(od, &name_map);
@@ -217,8 +231,10 @@ fn main() -> Result<()> {
     let hooks_dir = &rys.join("hooks");
     gen_hooks(od, hooks_dir)?;
 
-    // //ios
-    // gen_hooks(ios_od, hooks_dir)?;
+    //ios
+    if !ios_types.is_empty() {
+        gen_hooks(ios_od, hooks_dir)?;
+    }
 
     Ok(())
 }
