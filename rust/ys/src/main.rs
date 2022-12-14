@@ -79,7 +79,7 @@ fn main() -> Result<()> {
     //未加密
     for m in unencs.iter() {
         let fname = format!("{}.h", m);
-        let pattern = &format!(r", {}_\w+(, \(|\))", m);
+        let pattern = &format!(r"DO.*, {}_\.*\w+(, \(|\))", m);
         let re = Regex::new(pattern)?;
         let td_re = &format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", m);
         let td_re = Regex::new(td_re).unwrap();

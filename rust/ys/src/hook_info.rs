@@ -161,7 +161,7 @@ impl HookInfo {
     }
 
     fn search_methods(&self, lines: &[&str], info: &mut TypeInfo) {
-        let re = &format!(r", {}_\w+, \(", &info.ename);
+        let re = &format!(r"DO.*, {}_\.*\w+, \(", &info.ename);
         let re = Regex::new(re).unwrap();
         let mut ok = false;
         for line in lines {
