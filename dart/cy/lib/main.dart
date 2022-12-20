@@ -1,4 +1,11 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 void main() {
   runApp(const MyApp());
@@ -48,17 +55,88 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  var _cfg = {};
+  var _client = Dio();
+  var _ts = ['36.4', '36.5', '36.6', '36.7', '36.8'];
+  var _hs = {'早': '07', '中': '11', '晚': '17'};
+  var _toast = FToast();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+
+    _toast.init(context);
+
+    var cookieJar = CookieJar();
+    _client.interceptors.add(CookieManager(cookieJar));
+  }
+
+  void _report(String nn, String tt) async {
+    if (_cfg.isEmpty) {
+      var s = await rootBundle.loadString('assets/cfg.json');
+      _cfg = jsonDecode(s);
+      _client.options.baseUrl = _cfg['base_url'];
+    }
+    _client.options.headers['Content-Type'] =
+        'application/x-www-form-urlencoded';
+    var login_res = await _client.post(_cfg['login_path'], data: _cfg[nn]);
+    var login_json = jsonDecode(login_res.data);
+    print('$login_json');
+    var name = login_json['info']['usrName'];
+    var report_data = _cfg['report_data'];
+    var date = DateTime.now();
+    var d =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    var h = _hs[tt];
+    var m = Random().nextInt(30) + 10;
+    report_data['epShiduan'] = tt;
+    report_data['epTemperature'] = _ts[Random().nextInt(_ts.length)];
+    report_data['epDate'] = '$d $h:$m';
+    _client.options.headers['Content-Type'] =
+        'application/x-www-form-urlencoded; charset=UTF-8';
+    var report_res = await _client.post(_cfg['report_path'], data: report_data);
+    var report_json = jsonDecode(report_res.data);
+    print('$report_json');
+    var code = report_json['code'];
+
+    _toast.showToast(
+      child: Container(
+        child: Center(
+            child: Text(
+          '$name $tt ${code.toString()}',
+          style: TextStyle(
+              color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+        )),
+        color: Colors.blue,
+        width: 200,
+        height: 60,
+      ),
+      toastDuration: Duration(seconds: 1),
+    );
+  }
+
+  void _reportShuhan1() {
+    _report('han', '早');
+  }
+
+  void _reportShuhan2() {
+    _report('han', '中');
+  }
+
+  void _reportShuhan3() {
+    _report('han', '晚');
+  }
+
+  void _reportShuya1() {
+    _report('ya', '早');
+  }
+
+  void _reportShuya2() {
+    _report('ya', '中');
+  }
+
+  void _reportShuya3() {
+    _report('ya', '晚');
   }
 
   @override
@@ -93,23 +171,53 @@ class _MyHomePageState extends State<MyHomePage> {
           // center the children vertically; the main axis here is the vertical
           // axis because Columns are vertical (the cross axis would be
           // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
+            const SizedBox(width: 20, height: 20),
+            Row(children: [
+              const SizedBox(width: 20, height: 20),
+              const Text(
+                '李姝涵：',
+              ),
+              ElevatedButton(
+                onPressed: _reportShuhan1,
+                child: Text('早'),
+              ),
+              const SizedBox(width: 20, height: 20),
+              ElevatedButton(
+                onPressed: _reportShuhan2,
+                child: Text('中'),
+              ),
+              const SizedBox(width: 20, height: 20),
+              ElevatedButton(
+                onPressed: _reportShuhan3,
+                child: Text('晚'),
+              ),
+            ]),
+            const SizedBox(width: 20, height: 20),
+            Row(children: [
+              const SizedBox(width: 20, height: 20),
+              const Text(
+                '李姝雅：',
+              ),
+              ElevatedButton(
+                onPressed: _reportShuya1,
+                child: Text('早'),
+              ),
+              const SizedBox(width: 20, height: 20),
+              ElevatedButton(
+                onPressed: _reportShuya2,
+                child: Text('中'),
+              ),
+              const SizedBox(width: 20, height: 20),
+              ElevatedButton(
+                onPressed: _reportShuya3,
+                child: Text('晚'),
+              ),
+            ]),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
