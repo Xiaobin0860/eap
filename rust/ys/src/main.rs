@@ -258,7 +258,7 @@ fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
 }
 
 fn gen_hooks(od: &PathBuf, hooks_dir: &PathBuf) -> Result<()> {
-    let out = &od.join("hook.cpp");
+    let out = &od.join("hook.inc");
     debug!("hooks_dir={}, out={}", hooks_dir.display(), out.display());
     let mut w = io::BufWriter::new(fs::File::create(out)?);
     for entry in WalkDir::new(hooks_dir).into_iter().filter_map(|e| e.ok()) {
