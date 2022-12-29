@@ -103,6 +103,28 @@ fn array_sign(nums: Vec<i32>) -> i32 {
     sign
 }
 
+/// https://leetcode.cn/problems/shortest-subarray-with-sum-at-least-k/
+fn shortest_subarray(nums: Vec<i32>, k: i32) -> i32 {
+    use std::collections::VecDeque;
+    let (mut ret, mut pre_sum, mut queue) = (i64::MAX, 0, VecDeque::new());
+    queue.push_back((0, -1));
+    for i in 0..nums.len() {
+        pre_sum += nums[i] as i64;
+        while !queue.is_empty() && pre_sum <= queue[queue.len() - 1].0 {
+            queue.pop_back();
+        }
+        while !queue.is_empty() && pre_sum - queue[0].0 >= k as i64 {
+            ret = ret.min(i as i64 - queue.pop_front().unwrap().1 as i64);
+        }
+        queue.push_back((pre_sum, i as i32));
+    }
+    if ret == i64::MAX {
+        -1
+    } else {
+        ret as i32
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -133,5 +155,31 @@ mod tests {
         assert_eq!(1, array_sign(vec!(-1, -2, -3, -4, 3, 2, 1)));
         assert_eq!(0, array_sign(vec!(1, 5, 0, 2, -3)));
         assert_eq!(-1, array_sign(vec!(-1, 1, -1, 1, -1)));
+    }
+
+    #[test]
+    fn test_shortest_subarray() {
+        assert_eq!(1, shortest_subarray(vec!(1), 1));
+        assert_eq!(-1, shortest_subarray(vec!(1, 2), 4));
+        assert_eq!(3, shortest_subarray(vec!(2, -1, 2), 3));
+        assert_eq!(1, shortest_subarray(vec!(1, 2, 3, 4, 1, 9, 10), 10));
+        assert_eq!(
+            48,
+            shortest_subarray(
+                vec!(
+                    58701, 23101, 6562, 60667, 20458, -14545, 74421, 54590, 84780, 63295, 33238,
+                    -10143, -35830, -9881, 67268, 90746, 9220, -15611, 23957, 29506, -33103,
+                    -14322, 19079, -34950, -38551, 51786, -48668, -17133, 5163, 15122, 5463, 74527,
+                    41111, -3281, 73035, -28736, 32910, 17414, 4080, -42435, 66106, 48271, 69638,
+                    14500, 37084, -9978, 85748, -43017, 75337, -27963, -34333, -25360, 82454,
+                    87290, 87019, 84272, 17540, 60178, 51154, 19646, 54249, -3863, 38665, 13101,
+                    59494, 37172, -16950, -30560, -11334, 27620, 73388, 34019, -35695, 98999,
+                    79086, -28003, 87339, 2448, 66248, 81817, 73620, 28714, -46807, 51901, -23618,
+                    -29498, 35427, 11159, 59803, 95266, 20307, -3756, 67993, -31414, 11468, -28307,
+                    45126, 77892, 77226, 79433
+                ),
+                1677903
+            )
+        );
     }
 }
