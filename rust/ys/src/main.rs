@@ -123,7 +123,7 @@ fn main() -> Result<()> {
     debug!("fnames count: {}", fnames.len());
     for fname in fnames.iter() {
         let ename = fname.search_ename(funcs);
-        name_map.insert(fname.name.clone(), ename.to_owned());
+        try_insert(&mut name_map, &fname.name, ename);
     }
     //找加密
     for pattern in patterns.iter_mut() {
@@ -152,11 +152,12 @@ fn main() -> Result<()> {
             let names: Vec<_> = info.name.split('_').collect();
             let enames: Vec<_> = info.ename.split('_').collect();
             for i in 0..names.len() {
-                name_map.insert(names[i].to_owned(), enames[i].to_owned());
+                try_insert(&mut name_map, names[i], enames[i]);
             }
         } else {
-            name_map.insert(info.name.clone(), info.ename.clone());
+            try_insert(&mut name_map, &info.name, &info.ename);
         }
+        //extra
         if let Some(xp) = pattern.xp.as_ref() {
             let xp = xp.as_str();
             let ss: Vec<_> = xp.split('-').collect();
@@ -176,24 +177,16 @@ fn main() -> Result<()> {
         }
     }
     //加密二次查找
-    for pattern in xps.iter_mut() {
-        trace!("{pattern:?}");
-        let re = Regex::new(&pattern.mp)?;
-        let info = pattern
-            .search_type_from_funclines(&re, &lines, types)
-            .unwrap();
-        name_map.insert(info.name.clone(), info.ename.clone());
-        let out = &od.join(format!("{}.h", &info.name));
-        debug!("{info}, out={out:?}");
-        info.write_to_file(out);
-
-        //ios
-        if !ios_types.is_empty() {
-            let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
-            let out = &ios_od.join(format!("{}.h", &info.name));
-            info.write_to_file(out);
-        }
-    }
+    search_xps(
+        od,
+        ios_od,
+        &lines,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+    )?;
     //替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
@@ -217,7 +210,7 @@ fn main() -> Result<()> {
         debug!("fnames count: {}", fnames.len());
         for fname in fnames.iter() {
             let ename = fname.search_ename(contents);
-            name_map.insert(fname.name.clone(), ename.to_owned());
+            try_insert(&mut name_map, &fname.name, ename);
         }
     }
     //保存字符串映射
@@ -227,8 +220,72 @@ fn main() -> Result<()> {
     //再次替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
-    //找hook地址
     let hooks_dir = &rys.join("hooks");
+    //params
+    xps.clear();
+    for entry in WalkDir::new(hooks_dir).into_iter().filter_map(|e| e.ok()) {
+        let f = entry.path();
+        trace!("{}", f.display());
+        let ext = f.extension();
+        if ext.is_none() || ext.unwrap().to_str().unwrap() != "json" {
+            continue;
+        }
+        let name = f.file_name().unwrap().to_str().unwrap();
+        let cname = &name.replace(".json", "");
+        let h = &od.join(name.replace(".json", ".h"));
+        trace!("{} cname={cname}, h={}", f.display(), h.display());
+        let contents = fs::read_to_string(h)?;
+        let contents = contents.as_str();
+        let hooks = fs::read_to_string(f)?;
+        let hooks = hooks.as_str();
+        let mut hooks: Vec<AppFunc> = serde_json::from_str(hooks)?;
+        for hook in hooks.iter_mut() {
+            if let Some(ps) = hook.ps.as_ref() {
+                trace!("{hook:?}");
+                let re = Regex::new(&hook.mp)?;
+                let mat = re.find(contents).unwrap().as_str();
+                trace!("{mat}");
+                //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
+                let pms = mat.split(", (").collect::<Vec<_>>()[1];
+                //EHOCMLAEENL * __this, uint32_t BKLDHNCDCMG, MethodInfo* method));
+                let pms = pms.split(')').collect::<Vec<_>>()[0];
+                let pms = pms.split(", ").collect::<Vec<_>>();
+                let mut pv = Vec::new();
+                for pm in pms {
+                    let pm = pm.split(' ').collect::<Vec<_>>();
+                    let typ = pm[0].split('*').collect::<Vec<_>>()[0];
+                    let name = *pm.last().unwrap();
+                    trace!("{typ},{name}");
+                    pv.push((typ, name));
+                }
+                for p in ps {
+                    let (typ, name) = pv[p.idx];
+                    try_insert(&mut name_map, &p.typ, typ);
+                    try_insert(&mut name_map, &p.name, name);
+                    let mut hi = HookInfo::default();
+                    hi.name = p.typ.clone();
+                    xps.push(HookInfo::new(
+                        p.typ.clone(),
+                        format!(r"DO.*, {}_\w+, \(", typ),
+                    ));
+                }
+            }
+        }
+    }
+    search_xps(
+        od,
+        ios_od,
+        &lines,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+    )?;
+    //再次替换密文
+    rep_encs(od, &name_map);
+    rep_encs(ios_od, &name_map);
+    //找hook地址
     gen_hooks(od, hooks_dir)?;
 
     //ios
@@ -236,6 +293,37 @@ fn main() -> Result<()> {
         gen_hooks(ios_od, hooks_dir)?;
     }
 
+    Ok(())
+}
+
+fn search_xps(
+    od: &PathBuf,
+    ios_od: &PathBuf,
+    lines: &Vec<&str>,
+    types: &str,
+    ios_lines: &Vec<&str>,
+    ios_types: &str,
+    xps: &mut Vec<HookInfo>,
+    name_map: &mut BTreeMap<String, String>,
+) -> Result<()> {
+    for pattern in xps.iter_mut() {
+        trace!("{pattern:?}");
+        let re = Regex::new(&pattern.mp)?;
+        let info = pattern
+            .search_type_from_funclines(&re, &lines, types)
+            .unwrap();
+        try_insert(name_map, &info.name, &info.ename);
+        let out = &od.join(format!("{}.h", &info.name));
+        debug!("{info}, out={out:?}");
+        info.write_to_file(out);
+
+        //ios
+        if !ios_types.is_empty() {
+            let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+            let out = &ios_od.join(format!("{}.h", &info.name));
+            info.write_to_file(out);
+        }
+    }
     Ok(())
 }
 
@@ -254,6 +342,14 @@ fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
             s = s.replace(v, k);
         }
         fs::write(f, s).unwrap();
+    }
+}
+
+fn try_insert(name_map: &mut BTreeMap<String, String>, k: &str, v: &str) {
+    if let Some(ref o) = name_map.insert(k.to_owned(), v.to_owned()) {
+        if o != v {
+            panic!("{k} => {o}!={v}");
+        }
     }
 }
 

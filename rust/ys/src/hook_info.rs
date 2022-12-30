@@ -6,6 +6,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use tracing::{debug, trace};
 
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct HookInfo {
     pub name: String,
@@ -102,6 +103,7 @@ impl HookInfo {
             //struct __declspec(align(8)) PFIDMOFNNFJ__Fields {
             //struct DDPHHPLKABA LHBAOFDMMFN;
             //struct NAJBLKFGKAI {
+            // EJNMNDFACFD* ALJHICJOGIE;
             let mat = mat.as_str();
             let ss: Vec<_> = mat.split('\n').collect();
             let mat = ss[0];
@@ -114,6 +116,8 @@ impl HookInfo {
                     .unwrap()
             } else {
                 mat.split(' ').collect::<Vec<_>>()[1]
+                    .split('*')
+                    .collect::<Vec<_>>()[0]
             };
             debug!("{} => {}", self.name, ename);
             let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
