@@ -213,10 +213,6 @@ fn main() -> Result<()> {
             try_insert(&mut name_map, &fname.name, ename);
         }
     }
-    //保存字符串映射
-    let s = serde_json::to_string_pretty(&name_map)?;
-    let enc = &od.join("name_map.json");
-    fs::write(enc, s)?;
     //再次替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
@@ -285,6 +281,12 @@ fn main() -> Result<()> {
     //再次替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
+
+    //保存字符串映射
+    let s = serde_json::to_string_pretty(&name_map)?;
+    let enc = &od.join("name_map.json");
+    fs::write(enc, s)?;
+
     //找hook地址
     gen_hooks(od, hooks_dir)?;
 
