@@ -256,14 +256,15 @@ fn main() -> Result<()> {
                 }
                 for p in ps {
                     let (typ, name) = pv[p.idx];
-                    try_insert(&mut name_map, &p.typ, typ);
-                    try_insert(&mut name_map, &p.name, name);
-                    let mut hi = HookInfo::default();
-                    hi.name = p.typ.clone();
-                    xps.push(HookInfo::new(
-                        p.typ.clone(),
-                        format!(r"DO.*, {}_\w+, \(", typ),
-                    ));
+                    if let Some(pt) = p.typ.as_ref() {
+                        try_insert(&mut name_map, pt, typ);
+                        let mut hi = HookInfo::default();
+                        hi.name = pt.clone();
+                        xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
+                    }
+                    if let Some(pn) = p.name.as_ref() {
+                        try_insert(&mut name_map, pn, name);
+                    }
                 }
             }
         }

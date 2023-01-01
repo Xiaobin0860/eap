@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ParamInfo {
     pub idx: usize,
-    pub typ: String,
-    pub name: String,
+    pub typ: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
