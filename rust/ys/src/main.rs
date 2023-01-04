@@ -114,7 +114,7 @@ fn main() -> Result<()> {
             ios_w.flush()?;
         }
     }
-    let mut name_map = BTreeMap::new();
+    let mut name_map = BTreeMap::new(); //name=>enc
     let mut xps = Vec::new();
     //找加密串.
     let fnames_file = &rys.join("fnames.json");
@@ -236,6 +236,19 @@ fn main() -> Result<()> {
         let hooks = hooks.as_str();
         let mut hooks: Vec<AppFunc> = serde_json::from_str(hooks)?;
         for hook in hooks.iter_mut() {
+            if let Some(name) = hook.name.as_ref() {
+                trace!("{hook:?}");
+                let re = Regex::new(&hook.mp)?;
+                let mat = re.find(contents).unwrap().as_str();
+                trace!("{mat}");
+                //DO_APP_FUNC(0x048C6300, void, GadgetInteractRsp_FEIJDEOEGML, (
+                let ef = *mat.split(',').collect::<Vec<_>>()[2]
+                    .split('_')
+                    .collect::<Vec<_>>()
+                    .last()
+                    .unwrap();
+                try_insert(&mut name_map, name, ef);
+            }
             if let Some(ps) = hook.ps.as_ref() {
                 trace!("{hook:?}");
                 let re = Regex::new(&hook.mp)?;

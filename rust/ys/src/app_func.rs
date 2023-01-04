@@ -12,5 +12,6 @@ pub struct AppFunc {
     pub tp: String,
     pub mp: String,
     pub mi: Option<String>,
+    pub name: Option<String>,
     pub ps: Option<Vec<ParamInfo>>,
 }
