@@ -20,6 +20,8 @@ impl FuncName {
             mat.split(',').collect::<Vec<_>>()[idx]
                 .split(' ')
                 .collect::<Vec<_>>()[1]
+                .split('*')
+                .collect::<Vec<_>>()[0]
         } else if fp.starts_with('+') {
             //取参数名
             let idx: usize = fp[1..2].parse().unwrap();

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use regex::Regex;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -115,6 +115,7 @@ fn main() -> Result<()> {
         }
     }
     let mut name_map = BTreeMap::new(); //name=>enc
+    let mut encs = HashSet::new();
     let mut xps = Vec::new();
     //找加密串.
     let fnames_file = &rys.join("fnames.json");
@@ -123,7 +124,7 @@ fn main() -> Result<()> {
     debug!("fnames count: {}", fnames.len());
     for fname in fnames.iter() {
         let ename = fname.search_ename(funcs);
-        try_insert(&mut name_map, &fname.name, ename);
+        try_insert(&mut name_map, &fname.name, ename, &mut encs);
     }
     //找加密
     for pattern in patterns.iter_mut() {
@@ -152,10 +153,10 @@ fn main() -> Result<()> {
             let names: Vec<_> = info.name.split('_').collect();
             let enames: Vec<_> = info.ename.split('_').collect();
             for i in 0..names.len() {
-                try_insert(&mut name_map, names[i], enames[i]);
+                try_insert(&mut name_map, names[i], enames[i], &mut encs);
             }
         } else {
-            try_insert(&mut name_map, &info.name, &info.ename);
+            try_insert(&mut name_map, &info.name, &info.ename, &mut encs);
         }
         //extra
         if let Some(xp) = pattern.xp.as_ref() {
@@ -186,6 +187,7 @@ fn main() -> Result<()> {
         ios_types,
         &mut xps,
         &mut name_map,
+        &mut encs,
     )?;
     //替换密文
     rep_encs(od, &name_map);
@@ -210,7 +212,7 @@ fn main() -> Result<()> {
         debug!("fnames count: {}", fnames.len());
         for fname in fnames.iter() {
             let ename = fname.search_ename(contents);
-            try_insert(&mut name_map, &fname.name, ename);
+            try_insert(&mut name_map, &fname.name, ename, &mut encs);
         }
     }
     //再次替换密文
@@ -247,7 +249,7 @@ fn main() -> Result<()> {
                     .collect::<Vec<_>>()
                     .last()
                     .unwrap();
-                try_insert(&mut name_map, name, ef);
+                try_insert(&mut name_map, name, ef, &mut encs);
             }
             if let Some(ps) = hook.ps.as_ref() {
                 trace!("{hook:?}");
@@ -270,13 +272,13 @@ fn main() -> Result<()> {
                 for p in ps {
                     let (typ, name) = pv[p.idx];
                     if let Some(pt) = p.typ.as_ref() {
-                        try_insert(&mut name_map, pt, typ);
+                        try_insert(&mut name_map, pt, typ, &mut encs);
                         let mut hi = HookInfo::default();
                         hi.name = pt.clone();
                         xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
                     }
                     if let Some(pn) = p.name.as_ref() {
-                        try_insert(&mut name_map, pn, name);
+                        try_insert(&mut name_map, pn, name, &mut encs);
                     }
                 }
             }
@@ -291,6 +293,7 @@ fn main() -> Result<()> {
         ios_types,
         &mut xps,
         &mut name_map,
+        &mut encs,
     )?;
     //再次替换密文
     rep_encs(od, &name_map);
@@ -321,6 +324,7 @@ fn search_xps(
     ios_types: &str,
     xps: &mut Vec<HookInfo>,
     name_map: &mut BTreeMap<String, String>,
+    encs: &mut HashSet<String>,
 ) -> Result<()> {
     for pattern in xps.iter_mut() {
         trace!("{pattern:?}");
@@ -328,7 +332,7 @@ fn search_xps(
         let info = pattern
             .search_type_from_funclines(&re, &lines, types)
             .unwrap();
-        try_insert(name_map, &info.name, &info.ename);
+        try_insert(name_map, &info.name, &info.ename, encs);
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
         info.write_to_file(out);
@@ -361,11 +365,13 @@ fn rep_encs(od: &PathBuf, name_map: &BTreeMap<String, String>) {
     }
 }
 
-fn try_insert(name_map: &mut BTreeMap<String, String>, k: &str, v: &str) {
+fn try_insert(name_map: &mut BTreeMap<String, String>, k: &str, v: &str, es: &mut HashSet<String>) {
     if let Some(ref o) = name_map.insert(k.to_owned(), v.to_owned()) {
         if o != v {
             panic!("{k} => {o}!={v}");
         }
+    } else if !es.insert(v.to_owned()) {
+        panic!("{k} => {v} exists enc");
     }
 }
 
