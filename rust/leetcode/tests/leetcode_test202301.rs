@@ -114,7 +114,7 @@ mod tests {
         assert!(list.head.is_some());
         let v2: Vec<_> = list.into();
         assert_eq!(v, v2);
-        list = v.clone().into();
+        list = v.into();
         list.reverse();
         let v3: Vec<_> = list.into();
         assert_eq!(v3, vec![5, 4, 3, 2, 1]);
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn test_reverse_list() {
         let v = vec![1, 2, 3, 4, 5];
-        let l: List = v.clone().into();
+        let l: List = v.into();
         let head = reverse_list(l.head);
         let l = List { head };
         let rv: Vec<_> = l.into();

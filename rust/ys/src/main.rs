@@ -131,9 +131,9 @@ fn main() -> Result<()> {
         trace!("{pattern:?}");
         let info = &if let Some(tp) = pattern.tp.as_ref() {
             let tp = tp.as_str();
-            if tp.starts_with('-') {
-                trace!("re={}", &tp[1..]);
-                let re = Regex::new(&tp[1..])?;
+            if let Some(tp) = tp.strip_prefix('-') {
+                trace!("re={tp}");
+                let re = Regex::new(tp)?;
                 pattern
                     .search_type_from_funcstr(&re, funcs, &lines, types)
                     .unwrap()
@@ -273,8 +273,6 @@ fn main() -> Result<()> {
                     let (typ, name) = pv[p.idx];
                     if let Some(pt) = p.typ.as_ref() {
                         try_insert(&mut name_map, pt, typ, &mut encs);
-                        let mut hi = HookInfo::default();
-                        hi.name = pt.clone();
                         xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
                     }
                     if let Some(pn) = p.name.as_ref() {
@@ -316,13 +314,13 @@ fn main() -> Result<()> {
 }
 
 fn search_xps(
-    od: &PathBuf,
-    ios_od: &PathBuf,
-    lines: &Vec<&str>,
+    od: &Path,
+    ios_od: &Path,
+    lines: &[&str],
     types: &str,
-    ios_lines: &Vec<&str>,
+    ios_lines: &[&str],
     ios_types: &str,
-    xps: &mut Vec<HookInfo>,
+    xps: &mut [HookInfo],
     name_map: &mut BTreeMap<String, String>,
     encs: &mut HashSet<String>,
 ) -> Result<()> {
@@ -330,7 +328,7 @@ fn search_xps(
         trace!("{pattern:?}");
         let re = Regex::new(&pattern.mp)?;
         let info = pattern
-            .search_type_from_funclines(&re, &lines, types)
+            .search_type_from_funclines(&re, lines, types)
             .unwrap();
         try_insert(name_map, &info.name, &info.ename, encs);
         let out = &od.join(format!("{}.h", &info.name));
@@ -339,7 +337,7 @@ fn search_xps(
 
         //ios
         if !ios_types.is_empty() {
-            let info = pattern.isearch(&info.name, &info.ename, &ios_lines, ios_types);
+            let info = pattern.isearch(&info.name, &info.ename, ios_lines, ios_types);
             let out = &ios_od.join(format!("{}.h", &info.name));
             info.write_to_file(out);
         }
@@ -375,7 +373,7 @@ fn try_insert(name_map: &mut BTreeMap<String, String>, k: &str, v: &str, es: &mu
     }
 }
 
-fn gen_hooks(od: &PathBuf, hooks_dir: &PathBuf) -> Result<()> {
+fn gen_hooks(od: &Path, hooks_dir: &PathBuf) -> Result<()> {
     let out = &od.join("hook.inc");
     debug!("hooks_dir={}, out={}", hooks_dir.display(), out.display());
     let mut w = io::BufWriter::new(fs::File::create(out)?);

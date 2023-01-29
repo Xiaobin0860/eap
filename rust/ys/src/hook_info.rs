@@ -70,7 +70,7 @@ impl HookInfo {
     pub fn search_type_from_funclines(
         &mut self,
         re: &Regex,
-        lines: &Vec<&str>,
+        lines: &[&str],
         types: &str,
     ) -> Option<TypeInfo> {
         for line in lines.iter() {
@@ -95,7 +95,7 @@ impl HookInfo {
         &mut self,
         re: &Regex,
         types: &str,
-        lines: &Vec<&str>,
+        lines: &[&str],
     ) -> Option<TypeInfo> {
         if let Some(mat) = re.find(types) {
             //struct NEMKAPOLJCG__Fields {
@@ -107,7 +107,7 @@ impl HookInfo {
             let ss: Vec<_> = mat.split('\n').collect();
             let mat = ss[0];
             trace!("mat={mat}");
-            let ename = if mat.find("__Fields").is_some() {
+            let ename = if mat.contains("__Fields") {
                 *mat.split("__Fields").collect::<Vec<_>>()[0]
                     .split(' ')
                     .collect::<Vec<_>>()
@@ -133,7 +133,7 @@ impl HookInfo {
         &mut self,
         re: &Regex,
         funcs: &str,
-        lines: &Vec<&str>,
+        lines: &[&str],
         types: &str,
     ) -> Option<TypeInfo> {
         if let Some(mat) = re.find(funcs) {
@@ -156,7 +156,7 @@ impl HookInfo {
         }
     }
 
-    pub fn isearch(&self, name: &str, ename: &str, flines: &Vec<&str>, types: &str) -> TypeInfo {
+    pub fn isearch(&self, name: &str, ename: &str, flines: &[&str], types: &str) -> TypeInfo {
         let mut info = TypeInfo::new(name.to_owned(), ename.to_owned());
         self.ios_search_type(types, &mut info);
         self.search_methods(flines, &mut info);
