@@ -42,3 +42,4 @@ add_definitions(
 endif()
 
 add_subdirectory(lua)
+add_subdirectory(cpp)

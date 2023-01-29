@@ -17,6 +17,17 @@
       "MIMode": "lldb"
     },
     {
+      "name": "lldb algorithm test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/@bin/algorithm",
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/@bin",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
+    },
+    {
       "name": "vsdbg play one_note_song",
       "type": "cppvsdbg",
       "request": "launch",
