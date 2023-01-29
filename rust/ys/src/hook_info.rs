@@ -6,7 +6,6 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use tracing::{debug, trace};
 
-
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct HookInfo {
     pub name: String,
