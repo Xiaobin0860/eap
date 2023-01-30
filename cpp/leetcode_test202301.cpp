@@ -42,9 +42,14 @@ public:
         assert(_head == nullptr);
     }
 
-    ListNode* head() const
+    ListNode* get_head() const
     {
         return _head;
+    }
+
+    void set_head(ListNode* head)
+    {
+        _head = head;
     }
 
     void push(int val)
@@ -98,27 +103,133 @@ bool has_cycle(ListNode* head)
     }
     return true;
 }
+ListNode* merge_lists(ListNode* list1, ListNode* list2)
+{
+    ListNode* result = nullptr;
+    ListNode* head = nullptr;
+    auto      next = [&result, &head](auto& node) {
+        if (head) {
+            head->next = node;
+            head = node;
+        } else {
+            head = node;
+            if (!result) {
+                result = head;
+            }
+        }
+        node = node->next;
+    };
+    while (list1 && list2) {
+        if (list2->val < list1->val) {
+            next(list2);
+        } else {
+            next(list1);
+        }
+    }
+    if (list1) {
+        if (head) {
+            head->next = list1;
+        } else {
+            result = list1;
+        }
+    } else if (list2) {
+        if (head) {
+            head->next = list2;
+        } else {
+            result = list2;
+        }
+    }
+    return result;
+}
+ListNode* merge_lists2(ListNode* list1, ListNode* list2)
+{
+    if (!list1) {
+        return list2;
+    } else if (!list2) {
+        return list1;
+    } else if (list2->val < list1->val) {
+        auto list = list2;
+        list->next = merge_lists2(list1, list2->next);
+        return list;
+    } else {
+        auto list = list1;
+        list->next = merge_lists2(list1->next, list2);
+        return list;
+    }
+}
 }  // namespace
 
 TEST(List, list)
 {
-    List l;
-    l.push(1);
-    ASSERT_TRUE(l.head());
-    l.push(2);
-    l.push(3);
-    ASSERT_TRUE(l.head());
-    ASSERT_EQ(std::make_pair(true, 3), l.pop());
-    ASSERT_EQ(std::make_pair(true, 2), l.pop());
-    ASSERT_EQ(std::make_pair(true, 1), l.pop());
-    ASSERT_EQ(std::make_pair(false, 0), l.pop());
+    // common op & reverse
+    {
+        List l;
+        l.push(1);
+        ASSERT_TRUE(l.get_head());
+        l.push(2);
+        l.push(3);
+        ASSERT_TRUE(l.get_head());
+        ASSERT_EQ(std::make_pair(true, 3), l.pop());
+        ASSERT_EQ(std::make_pair(true, 2), l.pop());
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(false, 0), l.pop());
 
-    l.push(1);
-    l.push(2);
-    l.push(3);
-    l.reverse();
-    ASSERT_EQ(std::make_pair(true, 1), l.pop());
-    ASSERT_EQ(std::make_pair(true, 2), l.pop());
-    ASSERT_EQ(std::make_pair(true, 3), l.pop());
-    ASSERT_EQ(std::make_pair(false, 0), l.pop());
+        l.push(1);
+        l.push(2);
+        l.push(3);
+        l.reverse();
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(true, 2), l.pop());
+        ASSERT_EQ(std::make_pair(true, 3), l.pop());
+        ASSERT_EQ(std::make_pair(false, 0), l.pop());
+    }
+    // merge
+    {
+        //[1,2,4]
+        List l1;
+        l1.push(4);
+        l1.push(2);
+        l1.push(1);
+        //[1,3,4]
+        List l2;
+        l2.push(4);
+        l2.push(3);
+        l2.push(1);
+        auto head = merge_lists(l1.get_head(), l2.get_head());
+        l1.set_head(nullptr);
+        l2.set_head(nullptr);
+        //[1,1,2,3,4,4]
+        List l(head);
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(true, 2), l.pop());
+        ASSERT_EQ(std::make_pair(true, 3), l.pop());
+        ASSERT_EQ(std::make_pair(true, 4), l.pop());
+        ASSERT_EQ(std::make_pair(true, 4), l.pop());
+        ASSERT_EQ(std::make_pair(false, 0), l.pop());
+    }
+    {
+        //[1,2,4]
+        List l1;
+        l1.push(4);
+        l1.push(2);
+        l1.push(1);
+        //[1,3,4]
+        List l2;
+        l2.push(4);
+        l2.push(3);
+        l2.push(1);
+        auto head = merge_lists2(l1.get_head(), l2.get_head());
+        l1.set_head(nullptr);
+        l2.set_head(nullptr);
+        //[1,1,2,3,4,4]
+        List l(head);
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(std::make_pair(true, 2), l.pop());
+        ASSERT_EQ(std::make_pair(true, 3), l.pop());
+        ASSERT_EQ(std::make_pair(true, 4), l.pop());
+        ASSERT_EQ(std::make_pair(true, 4), l.pop());
+        ASSERT_EQ(std::make_pair(false, 0), l.pop());
+    }
 }

@@ -28,6 +28,20 @@
       "MIMode": "lldb"
     },
     {
+      "name": "vsdbg algorithm test",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/@bin/Debug/algorithm",
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/@bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      }
+    },
+    {
       "name": "vsdbg play one_note_song",
       "type": "cppvsdbg",
       "request": "launch",
