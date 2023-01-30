@@ -82,6 +82,74 @@ public:
         }
     }
 
+    int get_length()
+    {
+        auto len = 0;
+        auto cur_head = _head;
+        while (auto node = cur_head) {
+            cur_head = node->next;
+            ++len;
+        }
+        return len;
+    }
+
+    bool remove_nth_from_end(int n)
+    {
+        if (n <= 0) {
+            return false;
+        }
+        auto len = get_length();
+        auto pre_idx = len - n;
+        if (pre_idx < 0) {
+            return false;
+        }
+        auto gard = new ListNode(0, _head);
+        auto idx = 0;
+        auto pre_node = gard;
+        for (int i = 0; i < pre_idx; i++) {
+            pre_node = pre_node->next;
+        }
+        auto del_node = pre_node->next;
+        pre_node->next = del_node->next;
+        delete del_node;
+        _head = gard->next;
+        delete gard;
+        return true;
+    }
+    bool remove_nth_from_end2(int n)
+    {
+        if (n <= 0) {
+            return false;
+        }
+        auto      gard = new ListNode(0, _head);
+        ListNode* p1 = nullptr;
+        ListNode* p2 = nullptr;
+        auto      cur_head = gard;
+        int       i = 0;
+        while (p2 = cur_head) {
+            cur_head = p2->next;
+            if (i != n) {
+                ++i;
+            } else {
+                if (p1) {
+                    p1 = p1->next;
+                } else {
+                    p1 = gard;
+                }
+            }
+        }
+        if (!p1) {
+            delete gard;
+            return false;
+        }
+        auto del_node = p1->next;
+        p1->next = del_node->next;
+        delete del_node;
+        _head = gard->next;
+        delete gard;
+        return true;
+    }
+
 private:
     ListNode* _head = nullptr;
 };
@@ -157,6 +225,10 @@ ListNode* merge_lists2(ListNode* list1, ListNode* list2)
         return list;
     }
 }
+
+ListNode* remove_nth_from_end(ListNode* head, int n)
+{
+}
 }  // namespace
 
 TEST(List, list)
@@ -166,13 +238,19 @@ TEST(List, list)
         List l;
         l.push(1);
         ASSERT_TRUE(l.get_head());
+        ASSERT_EQ(1, l.get_length());
         l.push(2);
         l.push(3);
+        ASSERT_EQ(3, l.get_length());
         ASSERT_TRUE(l.get_head());
         ASSERT_EQ(std::make_pair(true, 3), l.pop());
-        ASSERT_EQ(std::make_pair(true, 2), l.pop());
-        ASSERT_EQ(std::make_pair(true, 1), l.pop());
+        ASSERT_EQ(2, l.get_length());
+        //[2,1]
+        l.remove_nth_from_end(2);
+        //[1]
+        l.remove_nth_from_end2(1);
         ASSERT_EQ(std::make_pair(false, 0), l.pop());
+        ASSERT_EQ(0, l.get_length());
 
         l.push(1);
         l.push(2);
