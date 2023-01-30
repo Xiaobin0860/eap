@@ -150,6 +150,17 @@ public:
         return true;
     }
 
+    ListNode* middle()
+    {
+        auto slow = _head;
+        auto fast = _head;
+        while (fast && fast->next) {
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+        return slow;
+    }
+
 private:
     ListNode* _head = nullptr;
 };
@@ -225,10 +236,6 @@ ListNode* merge_lists2(ListNode* list1, ListNode* list2)
         return list;
     }
 }
-
-ListNode* remove_nth_from_end(ListNode* head, int n)
-{
-}
 }  // namespace
 
 TEST(List, list)
@@ -242,12 +249,15 @@ TEST(List, list)
         l.push(2);
         l.push(3);
         ASSERT_EQ(3, l.get_length());
+        ASSERT_EQ(2, l.middle()->val);
         ASSERT_TRUE(l.get_head());
         ASSERT_EQ(std::make_pair(true, 3), l.pop());
         ASSERT_EQ(2, l.get_length());
         //[2,1]
+        ASSERT_EQ(1, l.middle()->val);
         l.remove_nth_from_end(2);
         //[1]
+        ASSERT_EQ(1, l.middle()->val);
         l.remove_nth_from_end2(1);
         ASSERT_EQ(std::make_pair(false, 0), l.pop());
         ASSERT_EQ(0, l.get_length());
