@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "singleton.h"
 
 /**
  * Definition for singly-linked list.
@@ -70,6 +71,7 @@ public:
         return {true, val};
     }
 
+    //单链表反转 206
     void reverse()
     {
         auto cur_head = _head;
@@ -93,6 +95,7 @@ public:
         return len;
     }
 
+    // 删除链表倒数第n个结点 19
     bool remove_nth_from_end(int n)
     {
         if (n <= 0) {
@@ -150,6 +153,7 @@ public:
         return true;
     }
 
+    //求链表的中间结点 876
     ListNode* middle()
     {
         auto slow = _head;
@@ -166,6 +170,7 @@ private:
 };
 
 namespace {
+//链表中环的检测 141
 bool has_cycle(ListNode* head)
 {
     if (!head || !head->next) {
@@ -182,6 +187,7 @@ bool has_cycle(ListNode* head)
     }
     return true;
 }
+// 两个有序的链表合并 21
 ListNode* merge_lists(ListNode* list1, ListNode* list2)
 {
     ListNode* result = nullptr;
@@ -320,4 +326,63 @@ TEST(List, list)
         ASSERT_EQ(std::make_pair(true, 4), l.pop());
         ASSERT_EQ(std::make_pair(false, 0), l.pop());
     }
+}
+
+namespace {
+//删除有序数组中的重复项 26
+int remove_duplicates(std::vector<int>& nums)
+{
+    auto len = nums.size();
+    auto slow = 1;
+    for (auto fast = 1; fast < len; ++fast) {
+        if (nums[fast] != nums[fast - 1]) {
+            nums[slow++] = nums[fast];
+        }
+    }
+    return slow;
+}
+}  // namespace
+
+TEST(Array, array)
+{
+    // remove_duplicates
+    {
+        std::vector<int> v{1};
+
+        auto n = remove_duplicates(v);
+        ASSERT_EQ(1, n);
+        ASSERT_EQ(1, v[0]);
+        v.push_back(1);
+        n = remove_duplicates(v);
+        ASSERT_EQ(1, n);
+        ASSERT_EQ(1, v[0]);
+        ASSERT_EQ(2, v.size());
+        ASSERT_EQ(1, v[1]);
+        v.push_back(2);
+        n = remove_duplicates(v);
+        ASSERT_EQ(2, n);
+        ASSERT_EQ(1, v[0]);
+        ASSERT_EQ(2, v[1]);
+        ASSERT_EQ(3, v.size());
+        ASSERT_EQ(2, v[2]);
+        v.push_back(3);
+        v.push_back(3);
+        n = remove_duplicates(v);
+        ASSERT_EQ(3, n);
+        ASSERT_EQ(1, v[0]);
+        ASSERT_EQ(2, v[1]);
+        ASSERT_EQ(3, v[2]);
+    }
+}
+
+TEST(Singleton1, test)
+{
+    ASSERT_EQ(1, GetSingleton().GetCount());
+    ASSERT_EQ(1, GetSingleton().GetCount());
+}
+
+TEST(Singleton1, test2)
+{
+    ASSERT_EQ(1, GetSingleton().GetCount());
+    ASSERT_EQ(1, GetSingleton().GetCount());
 }

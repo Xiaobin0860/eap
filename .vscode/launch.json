@@ -28,12 +28,26 @@
       "MIMode": "lldb"
     },
     {
-      "name": "vsdbg algorithm test",
+      "name": "vsdbg algorithm debug test",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/algorithm",
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/@bin",
+      "cwd": "${workspaceFolder}/@bin/Debug",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      }
+    },
+    {
+      "name": "vsdbg algorithm release test",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/@bin/Release/algorithm",
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/@bin/Release",
       "environment": [],
       "console": "integratedTerminal",
       "logging": {
