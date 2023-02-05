@@ -43,3 +43,4 @@ endif()
 
 add_subdirectory(lua)
 add_subdirectory(cpp)
+add_subdirectory(TexaServer)

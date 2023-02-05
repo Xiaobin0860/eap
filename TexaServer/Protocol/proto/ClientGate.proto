@@ -1,0 +1,482 @@
+
+import "Common.proto";
+
+package ClientGate;
+
+option optimize_for = LITE_RUNTIME;
+
+enum EnumLoginType
+{
+    enumLoginTypeRegisterNewUser    = 0;
+    enumLoginTypeGuestAccount       = 1;
+    enumLoginTypeRegisterAccount    = 2;
+}
+
+enum EnumGender
+{
+    enumGenderFemale    = 0;
+    enumGenderMale      = 1;
+    enumGenderUnknown   = 2;
+}
+
+enum EnumDeviceType
+{
+    enumDeviceTypeiPhone   = 0;
+    enumDeviceTypeiPad	   = 1;
+    enumDeviceTypeAndroid  = 2;
+    enumDeviceTypeWindows  = 3;
+}
+
+enum EnumResult
+{
+    enumResultSucc = 0;
+    enumResultFail = 1;
+}
+
+enum EnumNewVersion
+{
+    enumUpdateTipNoNewVersion                   = 0;
+    enumUpdateTipHasNewVersion                  = 1;
+    enumUpdateTipHasNewVersionMandatoryUpdate   = 2;
+}
+
+enum EnumVIPLevel
+{
+    enumVIPLevelNone        = 0;
+    enumVIPLevelSilver      = 1;
+    enumVIPLevelGold        = 2;
+    enumVIPLevelPlatinum    = 3;
+    enumVIPLevelDiamond     = 4;
+}
+
+// Client Login
+message LoginRequest
+{
+    required EnumLoginType login_type           = 1;
+    required string account                     = 2;
+    required string password                    = 3;
+    required string nick                        = 4;
+    required EnumGender gender                  = 5;
+    required EnumDeviceType device_type         = 6;
+    required string device_id                   = 7;
+    optional string device_token                = 8;    //iOS device push token
+    required string mac                         = 9;
+    required string secure_key                  = 10;   //avoid hacker attack
+    required string channel                     = 11;   //marketing channel
+    required uint32 version                     = 12;   //current version
+    optional string phone_no                    = 13;
+}
+message BasicUserInfo
+{
+    required string user_id                     = 1;
+    required string nick                        = 2;
+    required string avatar                      = 3;
+    required EnumGender gender                  = 4;
+    required int64 user_score                   = 5;
+    required uint64 lev                         = 6;
+    required uint64 experience                  = 7;
+    required uint64 vip                         = 8;
+    required uint64 activity                    = 9;
+}
+message LoginResponse
+{
+    required EnumResult result                  = 1;
+    required BasicUserInfo basic_user_info      = 2;
+    optional string update_url                  = 3;
+    optional string ios_update_url              = 4;
+    optional string latest_version              = 5;
+    optional string update_info                 = 6;
+}
+
+message GetOnlineUsers
+{
+    required int32 start                        = 1;    // 分页显示，start = 页数 * 每页显示人数
+                                                        // 比如每页显示20个，要显示第二页，则start = 1 * 20 = 20
+    required int32 count                        = 2;    // 申请个数，一般来说等于每页的显示人数
+}
+message OnlineUserList
+{
+    repeated BasicUserInfo users                = 1;
+}
+
+// 添加好友流程：
+// 客户端A发出 AddFriendReqest 请求，服务器转发至客户端B
+// 客户端B收到 AddFriendReqest 请求，根据需要展示 BasicUserInfo
+// 客户端B根据用户操作发送 AddFriendConfirm，服务器转发至客户端A，客户端A展示结果
+message AddFriendReqest
+{
+    required string target_id                   = 1;    // 想要添加好友的目标用户id，对于客户端B来说就是自己的id
+    optional BasicUserInfo user                 = 2;    // 服务器填充，客户端A发送此请求时可忽略
+                                                        // 客户端B根据此数据包显示客户端A对应用户的信息
+}
+enum EnumAddFriendResult
+{
+    Refused     = 0;
+    Accepted    = 1;
+    NotOnline   = 2;
+}
+message AddFriendConfirm
+{
+    required string target_id                   = 1;
+    required int32 result                       = 2;    // 0 拒绝，1 接受, 2 不在线
+    optional BasicUserInfo target_user          = 3;    // 若用户接受好友请求，此字段会被填充，客户端根据需要展示此好友信息
+}
+
+// Get room list
+message ClientGetInstanceListRequest
+{
+    required string game_name                   = 1;
+    required uint32 type                        = 2;
+}
+
+// Get tbl info
+message ClientGetUserInfo 
+{
+    required string user_id                     = 1;
+}
+
+message ClientGetUserInfoResponse 
+{
+    required BasicUserInfo basic_user_info      = 1;
+}
+
+// Client Enter Game
+message EnterGameRequest
+{
+    required string game_name                   = 1;
+    required uint32 room_id                     = 2;
+    optional string desc                        = 3;    // For LS, in Texas, desc is limit_min,limit_max,default_carry,max_player_count,sb,bb,item_price,type
+    optional uint32 seat_id			= 4;
+}
+
+// Client Enter Game
+message QuickEnterGameRequest
+{
+    required string game_name                   = 1;
+}
+message QuickEnterGameResponse
+{
+    required string game_name                   = 1;
+    required Common.GameInstanceClient info     = 2;
+}
+
+// 玩家桌子里信息
+message UserTableInfo
+{
+    required string Uid             = 1;
+    required int32 Money            = 2;
+    required int32 Index            = 3;
+    repeated int32 OwnCard          = 4;
+    repeated int32 SidePool         = 5;
+    optional int32 CurBet           = 6;
+    optional int32 TotalBet         = 7;
+    optional int32 Flod             = 8;
+    optional int32 AllIn            = 9;
+    optional int32 InGameing        = 10;
+}
+
+// 玩家在桌子里的信息
+message TableUserInfo
+{
+    // 玩家基本信息
+    optional BasicUserInfo user_base    = 1;
+    // 玩家桌子信息
+    optional UserTableInfo user_table   = 2;
+}
+
+message SidePool
+{
+    required int32 index            = 1;
+    required int32 money            = 2;
+}
+// 桌子信息
+message TableInfo
+{
+    // 游戏是否已经开始,0表示未开启,1表示已开启
+    required int32 Gameing          = 1;
+    // 庄家座位id
+    required int32 ButtonPlayer     = 2;
+    // 小盲注座位id
+    required int32 SmallPlayer      = 3;
+    // 大盲注座位id
+    required int32 BigPlayer        = 4;
+    // 底牌
+    repeated int32 DownCards        = 5;
+    // 当前最大下注金额
+    required int32 CurMaxBet        = 6;
+    // 底池
+    required int32 Pot              = 7;
+    // 正在下注玩家
+    required int32 CurPlayer        = 8;
+    repeated SidePool side_pool     = 9;
+    optional int32 main_pool        = 10;
+    optional int32 timer            = 11;
+    required int32 small_money      = 12;
+    required int32 big_money        = 13;
+}
+
+enum EnumEnterGameResult
+{
+    NO_SUCH_GAME                        = -1;
+    NO_SUCH_INSTANCE                    = -2;
+    NOT_ENOUGH_MONEY                    = -3;
+    SERVER_CONFIG_ERROR                 = -4;
+    UNKNOWN_ERROR                       = -5;
+    MAX_ENTER_GAME_RESULT               = -6;
+}
+
+// 玩家进入桌子响应
+message EnterGameResponse
+{
+    required EnumResult result          = 1;
+    optional EnumEnterGameResult why    = 2;
+    optional TableInfo table_info       = 3;
+    // 桌子里所有玩家信息(包括自己)
+    repeated TableUserInfo user_info    = 4;
+}
+
+// 其他玩家进入桌子响应
+message OtherEnterGameResponse
+{
+    required EnumResult result          = 1;
+    // 其他玩家信息
+    optional TableUserInfo user_info    = 2;
+}
+
+message LeaveGameRequest
+{
+}
+
+message OtherLeaveGame
+{
+    required string user_id             = 1;
+}
+
+message UserDisconnect
+{
+    required string user_id             = 1;
+}
+
+message LookTable
+{
+    required string game_name                   = 1;
+    required uint32 room_id                     = 2;
+    optional string desc                        = 3;    // For LS, in Texas, desc is limit_min,limit_max,default_carry,max_player_count,sb,bb,item_price,type
+}
+
+message LookTableResponse
+{
+    required EnumResult result          = 1;
+    optional TableInfo table_info       = 2;
+    // 桌子里所有玩家信息(包括自己)
+    repeated TableUserInfo user_info    = 3;
+}
+
+// 发牌
+message DealToUser
+{
+    required uint32 card_a          = 1;
+    required uint32 card_b          = 2;
+    required string button_user_id  = 3;
+    required string small_user_id   = 4;
+    required string big_user_id     = 5;
+    required string start_user_id   = 6;
+    required uint32 small_stakes    = 7;
+    required uint32 big_stakes      = 8;
+}
+
+message OnePoolInfo
+{
+    required uint32 index		= 1;
+    required uint32 money		= 2;
+}
+
+message SidePool_New
+{
+    required uint32 index		= 1; // 边池编号(产生边池的玩家位置)
+    repeated OnePoolInfo pools		= 2; // 玩家向此边池新增金额信息(玩家位置-总金额)
+}
+
+message MainPool_New
+{
+    repeated OnePoolInfo pools		= 1; // 玩家向此主池新增金额信息(玩家位置-总金额)
+}
+
+// 揭底牌
+message CardToUser
+{
+    required string start_user_id   = 1;
+    repeated uint32 card            = 2;
+    optional MainPool_New main_pool		= 3;
+    repeated SidePool_New side_pool		= 4;
+}
+
+// 弃牌
+message UserFold
+{
+    
+}
+
+// 玩家弃牌响应
+message UserFlodResponse
+{
+    required EnumResult result      = 1;
+    required string next_user_id    = 2;
+    optional int32 cur_round_total_bet	= 3;
+    optional int32 cur_round_max_raise	= 4;
+}
+
+// 其他玩家弃牌
+message OtherUserFlod
+{
+    required string user_id         = 1;
+    required string next_user_id    = 2;
+    optional int32 cur_round_total_bet	= 3;
+    optional int32 cur_round_max_raise	= 4;
+}
+
+// 跟注
+message UserCall
+{
+    
+}
+
+// 跟注响应
+message UserCallResponse
+{
+    required EnumResult result      = 1;
+    // 剩余金额
+    required int32 money            = 2;
+    required string next_user_id    = 3;
+    optional int32 cur_round_total_bet	= 4;
+    optional int32 cur_round_max_raise	= 5;
+}
+
+// 其他玩家跟注
+message OtherUserCall
+{
+    required string user_id         = 1;
+    required int32 money            = 2;
+    required string next_user_id    = 3;
+    optional int32 cur_round_total_bet	= 4;
+    optional int32 cur_round_max_raise	= 5;
+}
+
+// 加注
+message UserRaise
+{
+    // 加注倍数
+    required uint32 multi           = 1;
+}
+
+// 加注响应
+message UserRaiseResponse
+{
+    required EnumResult result      = 1;
+    // 剩余金额
+    required int32 money            = 2;
+    required string next_user_id    = 3;
+    optional int32 cur_round_total_bet	= 4;
+    optional int32 cur_round_max_raise	= 5;
+}
+
+// 其他玩家加注
+message OtherUserRaise
+{
+    required string user_id         = 1;
+    required int32 money            = 2;
+    required string next_user_id    = 3;
+    optional int32 cur_round_total_bet	= 4;
+    optional int32 cur_round_max_raise	= 5;
+}
+
+message Key32ValueArray
+{
+    required int32 key              = 1;
+    repeated int32 cards            = 2;
+}
+
+message Key32Value32
+{
+    required int32 key              = 1;
+    required int32 value            = 2;
+}
+
+message SettleUserInfo
+{
+    required int32 index            = 1; // 玩家座位id
+    required int32 money            = 2; // 玩家最终金额
+    required int32 card_level       = 3; // 最大牌型
+    required int32 win_flag         = 4; // 1 = win, 0 = fail
+    repeated int32 cards            = 5; // 玩家最大一副牌
+    repeated int32 own_cards		= 6; // 自己手里的牌
+    //optional int32 main_money		= 7; // 从主池中赢得金额
+    //repeated OnePoolInfo side_money	= 8; // 从边池中赢得金额
+}
+
+message PoolMoneyToUser
+{
+    optional MainPool_New main		= 1; // 主池分配, [玩家位置-分配的钱]
+    repeated SidePool_New side		= 2; // 边池分配, [边池编号:[玩家位置-分配的钱]]
+    optional MainPool_New return	= 3; // 玩家返回的钱,[玩家位置-返回的钱]
+}
+
+// 结算
+message SettleToUser
+{
+    repeated SettleUserInfo info	= 1;
+    optional MainPool_New main_pool	= 2;
+    repeated SidePool_New side_pool	= 3;
+    optional PoolMoneyToUser distribution_info = 4; // 池里钱分配
+    repeated int32 down_cards		= 5;
+}
+
+// 使用道具
+message UseItem
+{
+    required string other_user_id   = 1;
+    required int32 item_type        = 2;
+}
+
+message UseItemResponse
+{
+    required EnumResult result      = 1;
+    required string other_user_id   = 2;
+    required int32 item_type        = 3;
+}
+
+message OtherUseItem
+{
+    required string user_id             = 1;
+    required string other_user_id       = 2;
+    required int32 item_type            = 3;
+}
+
+message UpdateFriend
+{
+    required string friend_id           = 1;
+    // 0 删除, 1 增加
+    required int32 flag                 = 2;
+}
+
+message OpenBox
+{
+    required int32 box_type             = 1;
+}
+
+message OpenBoxResponse
+{
+    required EnumResult result          = 1;
+    optional int32 add_money            = 2;
+}
+
+message AddMoneyInfo
+{
+    required int32 user_id		= 1;
+    required int32 money		= 2;
+}
+
+message AddTableMoney
+{
+    repeated AddMoneyInfo money_info	= 1;
+}

@@ -1,0 +1,42 @@
+
+package GatewayServer;
+
+option optimize_for = LITE_RUNTIME;
+
+enum EnumServerType
+{
+    ST_GameServer   = 0;
+    ST_RecordServer = 1;
+}
+message LoginRequest
+{
+    required EnumServerType server_type     = 1;
+    required string account                 = 2;
+    required string secure_key              = 3;   //avoid hacker attack
+}
+
+enum EnumResult
+{
+    enumResultSucc = 0;
+    enumResultFail = 1;
+}
+message LoginResponse
+{
+    required EnumResult result              = 1;
+}
+
+enum DataType
+{
+    DT_NUMBER                               = 0;
+    DT_STRING                               = 1;
+}
+message SaveData
+{
+    required string name                    = 1;
+    required string str                     = 2; 
+}
+message SaveDataResponse
+{
+	required EnumResult result              = 1;
+    optional SaveData data                  = 2;
+}
