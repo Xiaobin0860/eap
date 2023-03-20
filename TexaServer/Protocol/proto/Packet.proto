@@ -1,0 +1,26 @@
+
+import "Protocol.proto";
+
+package PB;
+
+option optimize_for = LITE_RUNTIME;
+
+message Packet
+{
+    required Protocol.ClientGateProtocol command    = 1;
+    optional bytes serialized                       = 2;
+};
+
+//          Packet        ForwardingPacket
+// Client <========> GS <==================> LS/RS
+// ************************************************************************
+// NOTE: user_conn_id is very important, LS&RS MUST ensure it is correct.
+// ************************************************************************
+message ForwardingPacket
+{
+    required Protocol.ClientGateProtocol command    = 1;
+    required uint32 user_conn_id                    = 2;
+    optional string user_id                         = 3;
+    repeated uint32 others_conn_id                  = 4;    // broadcast
+    optional bytes serialized                       = 5;
+};

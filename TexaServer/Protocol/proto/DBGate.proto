@@ -1,0 +1,86 @@
+
+package DBGate;
+
+option optimize_for = LITE_RUNTIME;
+
+message RoomConfig
+{
+    required int32 count                = 1;    // default room count
+    required int64 limit_min            = 2;
+    required int64 limit_max            = 3;
+    required int64 default_carry        = 4;
+    required string desc                = 5;    // in texas poker, desc should be: "max_player_count,sb,bb,item_price,type"
+}
+message GameRoomListServer
+{
+    required string game_name           = 1;
+    repeated RoomConfig rooms           = 2;
+}
+
+message ArenaConfig
+{
+    required string name                = 1;
+    required int32 player_limit         = 2;
+    required int64 match_fee            = 3;
+    required int64 pump                 = 4;
+    required string award				= 5;
+	required string desc				= 6;
+}
+message GameArenaListServer
+{
+    required string game_name           = 1;
+    repeated ArenaConfig rooms          = 2;
+}
+
+message VipConfig
+{
+    required int64 lev                  = 1;
+    required string name                = 2;
+    required int64 exp                  = 3;
+    required int32 exp_bonus            = 4;
+    required int32 point_bonus          = 5;
+}
+message GameVipListServer
+{
+    required string game_name           = 1;
+    repeated VipConfig configs          = 2;
+}
+
+message LevConfig
+{
+    required int64 lev                  = 1;
+    required string name                = 2;
+    required int64 exp                  = 3;
+    required int64 total_exp            = 5;
+    required int64 limit_exp            = 6;
+}
+message GameLevListServer
+{
+    required string game_name           = 1;
+    repeated LevConfig configs          = 2;
+}
+
+enum AWARD_TYPE
+{
+	AWARD_TYPE_SCORE					= 0;
+	AWARD_TYPE_ITEM						= 1;
+}
+message ActivityConfig
+{
+	required int64	target				= 1;
+	required string award				= 2;
+}
+message GameActivityList
+{
+	required string game_name			= 1;
+	repeated ActivityConfig configs		= 2;
+}
+
+message GameFriend
+{
+	required string	friend_id			= 1;
+}
+message GameFrinedList
+{
+	repeated GameFriend friends			= 1;
+}

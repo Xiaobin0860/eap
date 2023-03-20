@@ -1,0 +1,88 @@
+
+package Protocol;
+
+option optimize_for = LITE_RUNTIME;
+
+enum ClientGateProtocol
+{
+    // Common: 0-10000
+    USER_DISCONNECTED_TO_CL             = 0;
+    HEART_BEAT                          = 1;
+
+    GAME_INSTANCE_LIST                  = 2;
+    GAME_ARENA_LIST                     = 3;
+    GAME_VIP_LIST                       = 4;
+    GAME_LEV_LIST                       = 5;
+    GAME_ACTIVITY_LIST                  = 6;
+    GAME_FRIEND_LIST                    = 7;
+    GAME_BAGGAGE                        = 8;
+
+
+    // Gateway: 10001-50000
+    SERVER_LOGIN_REQUEST                = 10001;
+    SERVER_LOGIN_RESPONSE               = 10002;
+
+    SAVE_DATA                           = 10003;
+    SAVE_DATA_RESPONSE                  = 10004;
+
+    ONLINE_USER_LIST_REQUEST            = 10005;
+    ONLINE_USER_LIST                    = 10006;
+
+    ADD_FRIEND_REQ                      = 10007;
+    ADD_FRIEND_CONFIRM                  = 10008;
+
+
+    // Client: 50001-50999
+    CLIENT_LOGIN_REQUEST                = 50001;
+    CLIENT_LOGIN_RESPONSE               = 50002;
+
+    CLIENT_ENTER_GAME                   = 50003;
+    CLIENT_ENTER_GAME_RESPONSE          = 50004;
+
+    CLIENT_LEAVE_GAME                   = 50005;
+    CLIENT_OTHER_ENTER_GAME             = 50006;
+
+    CLIENT_OTHER_LEAVE_GAME             = 50007;
+
+    CLIENT_USE_ITEM_REQUECT             = 50009;
+    CLIENT_USE_ITEM_RESPONSE            = 50010;
+    CLIENT_OTHER_USE_ITEM               = 50011;
+
+    CLIENT_GET_INSTANCE_LIST            = 50012;
+    CLIENT_UPDATE_FRIEND                = 50013;
+    
+    CLIENT_GET_USERINFO                 = 50014;
+    CLIENT_GET_USERINFO_RESPONSE        = 50015;
+
+    CLIENT_OPEN_BOX                     = 50016;
+    CLIENT_OPEN_BOX_RESPONSE            = 50017;
+
+    CLIENT_LOOK_TABLE                   = 50018;
+    CLIENT_LOOK_TABLE_RESPONSE          = 50019;
+
+    CLIENT_TABLE_ADD_MONEY              = 50020;
+
+    CLIENT_QUICK_ENTER_GAME             = 50008;
+    CLIENT_QUICK_ENTER_GAME_RESPONSE    = 50021;
+
+
+    // Texas Poker: 51000-51199
+    DEAL_TO_CLIENT                      = 51000;
+    CARD_TO_CLIENT                      = 51001;
+
+    CLIENT_FOLD                         = 51002;
+    CLIENT_FOLD_RESPONSE                = 51003;
+    CLIENT_OTHER_FLOD                   = 51004;
+
+    CLIENT_CALL                         = 51005;
+    CLIENT_CALL_RESPONSE                = 51006;
+    CLIENT_OTHER_CALL                   = 51007;
+
+    CLIENT_RAISE                        = 51008;
+    CLIENT_RAISE_RESPONSE               = 51009;
+    CLIENT_OTHER_RAISE                  = 51010;
+
+    SETTLE_TO_CLIENT                    = 51011;
+
+    DOWN_CARDS_TO_CLIENT                = 51012;
+}
