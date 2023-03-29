@@ -1,5 +1,4 @@
-// Shared message types.
-
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Coordinate {
     #[prost(int32, tag = "1")]
@@ -7,6 +6,7 @@ pub struct Coordinate {
     #[prost(int32, tag = "2")]
     pub y: i32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Player {
     #[prost(string, tag = "1")]
@@ -18,6 +18,7 @@ pub struct Player {
     #[prost(string, tag = "4")]
     pub icon: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Laser {
     #[prost(string, tag = "1")]
@@ -31,8 +32,7 @@ pub struct Laser {
     #[prost(string, tag = "5")]
     pub owner_id: ::prost::alloc::string::String,
 }
-// Message actions.
-
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Entity {
     #[prost(oneof = "entity::Entity", tags = "2, 3")]
@@ -40,6 +40,7 @@ pub struct Entity {
 }
 /// Nested message and enum types in `Entity`.
 pub mod entity {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Entity {
         #[prost(message, tag = "2")]
@@ -48,6 +49,7 @@ pub mod entity {
         Laser(super::Laser),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LoginRequest {
     #[prost(string, tag = "1")]
@@ -57,6 +59,7 @@ pub struct LoginRequest {
     #[prost(string, tag = "3")]
     pub password: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LoginResponse {
     #[prost(string, tag = "1")]
@@ -64,26 +67,31 @@ pub struct LoginResponse {
     #[prost(message, repeated, tag = "2")]
     pub entities: ::prost::alloc::vec::Vec<Entity>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Move {
     #[prost(enumeration = "Direction", tag = "1")]
     pub direction: i32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AddEntity {
     #[prost(message, optional, tag = "1")]
     pub entity: ::core::option::Option<Entity>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UpdateEntity {
     #[prost(message, optional, tag = "1")]
     pub entity: ::core::option::Option<Entity>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RemoveEntity {
     #[prost(string, tag = "1")]
     pub id: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PlayerRespawn {
     #[prost(message, optional, tag = "1")]
@@ -91,6 +99,7 @@ pub struct PlayerRespawn {
     #[prost(string, tag = "2")]
     pub killer_id: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RoundOver {
     #[prost(string, tag = "1")]
@@ -98,13 +107,13 @@ pub struct RoundOver {
     #[prost(sfixed64, tag = "2")]
     pub new_round_time: i64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RoundStart {
     #[prost(message, repeated, tag = "1")]
     pub players: ::prost::alloc::vec::Vec<Player>,
 }
-// Wraps multiple message actions.
-
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Request {
     #[prost(oneof = "request::Action", tags = "1, 2")]
@@ -112,6 +121,7 @@ pub struct Request {
 }
 /// Nested message and enum types in `Request`.
 pub mod request {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Action {
         #[prost(message, tag = "1")]
@@ -120,6 +130,7 @@ pub mod request {
         Laser(super::Laser),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Response {
     #[prost(oneof = "response::Action", tags = "1, 2, 3, 4, 5, 6")]
@@ -127,6 +138,7 @@ pub struct Response {
 }
 /// Nested message and enum types in `Response`.
 pub mod response {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Action {
         #[prost(message, tag = "1")]
@@ -164,6 +176,17 @@ impl Direction {
             Direction::Left => "LEFT",
             Direction::Right => "RIGHT",
             Direction::Stop => "STOP",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "UP" => Some(Self::Up),
+            "DOWN" => Some(Self::Down),
+            "LEFT" => Some(Self::Left),
+            "RIGHT" => Some(Self::Right),
+            "STOP" => Some(Self::Stop),
+            _ => None,
         }
     }
 }
@@ -269,14 +292,14 @@ pub mod game_client {
 pub mod game_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    ///Generated trait containing gRPC methods that should be implemented for use with GameServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with GameServer.
     #[async_trait]
     pub trait Game: Send + Sync + 'static {
         async fn login(
             &self,
             request: tonic::Request<super::LoginRequest>,
         ) -> Result<tonic::Response<super::LoginResponse>, tonic::Status>;
-        ///Server streaming response type for the GetStream method.
+        /// Server streaming response type for the GetStream method.
         type GetStreamStream: futures_core::Stream<Item = Result<super::Response, tonic::Status>>
             + Send
             + 'static;

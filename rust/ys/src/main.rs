@@ -35,6 +35,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let rys = &Path::new(&args.gd).join("rys");
     let od = &rys.join(&args.gv);
+    let pbd = &rys.join(format!("proto{}", &args.gv));
     info!("Finding {} offsets in {} od={od:?} ...", &args.gv, &args.gd);
     let ios_od = &rys.join(format!("i{}", &args.gv));
 
@@ -301,6 +302,26 @@ fn main() -> Result<()> {
     let s = serde_json::to_string_pretty(&name_map)?;
     let enc = &od.join("name_map.json");
     fs::write(enc, s)?;
+
+    let mb = name_map.get("MessageBase").unwrap();
+    trace!("MessageBase => {mb}");
+    let mre = Regex::new(&format!(
+        r"struct .*__Fields.*\n    struct {}__Fields.*\n([^}}]*\n)*\}};",
+        mb
+    ))
+    .unwrap();
+    let bre = Regex::new(&format!(r"    struct {}__Fields.*\n", mb)).unwrap();
+    for m in mre.find_iter(types) {
+        let m = m.as_str();
+        let mn = m.split('_').collect::<Vec<_>>()[0]
+            .split(' ')
+            .collect::<Vec<_>>()[1];
+        let pbf = &pbd.join(format!("{mn}.proto"));
+        let m = m.replace("__Fields", "");
+        let m = m.replace("struct", "message");
+        let mm = bre.replace(&m, "");
+        fs::write(pbf, mm.as_bytes())?;
+    }
 
     //找hook地址
     gen_hooks(od, hooks_dir)?;

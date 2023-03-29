@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
-    "helloworld-tonic",   # tonic hello world
-    "routeguide-tonic",   # tonic route guide
+    #"helloworld-tonic",   # tonic hello world
+    #"routeguide-tonic",   # tonic route guide
     "tshooter",
     "roguelike-tutorial",
     "leetcode",
