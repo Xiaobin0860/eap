@@ -317,8 +317,8 @@ fn main() -> Result<()> {
             .split(' ')
             .collect::<Vec<_>>()[1];
         let pbf = &pbd.join(format!("{mn}.proto"));
-        let m = m.replace("__Fields", "");
-        let m = m.replace("struct", "message");
+        let m = m.replacen("__Fields", "", 1);
+        let m = m.replacen("struct", "message", 1);
         let mm = bre.replace(&m, "");
         fs::write(pbf, mm.as_bytes())?;
     }
