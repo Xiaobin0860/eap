@@ -4,7 +4,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .compile(&["proto/abi.proto"], &["proto"])?;
 
     std::process::Command::new("cargo")
-        .args(&["fmt", "--", "src/abi/abi.rs"])
+        .args(["fmt", "--", "src/abi/abi.rs"])
         .status()
         .expect("cargo fmt failed");
 

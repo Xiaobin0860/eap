@@ -8,7 +8,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .compile(&["proto/routeguide.proto"], &["proto"])?;
 
     std::process::Command::new("cargo")
-        .args(&["fmt", "--", "src/abi/routeguide.rs"])
+        .args(["fmt", "--", "src/abi/routeguide.rs"])
         .status()
         .expect("cargo fmt failed");
 

@@ -2,7 +2,9 @@
 /// (degrees multiplied by 10**7 and rounded to the nearest integer).
 /// Latitudes should be in the range +/- 90 degrees and longitude should be in
 /// the range +/- 180 degrees (inclusive).
-#[derive(Hash, Eq, Clone, PartialEq, ::prost::Message)]
+#[derive(Hash, Eq)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Point {
     #[prost(int32, tag = "1")]
     pub latitude: i32,
@@ -11,6 +13,7 @@ pub struct Point {
 }
 /// A latitude-longitude rectangle, represented as two diagonally opposite
 /// points "lo" and "hi".
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Rectangle {
     /// One corner of the rectangle.
@@ -23,6 +26,7 @@ pub struct Rectangle {
 /// A feature names something at a given point.
 ///
 /// If a feature could not be named, the name is empty.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Feature {
     /// The name of the feature.
@@ -33,6 +37,7 @@ pub struct Feature {
     pub location: ::core::option::Option<Point>,
 }
 /// A RouteNote is a message sent while at a given point.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RouteNote {
     /// The location from which the message is sent.
@@ -47,6 +52,7 @@ pub struct RouteNote {
 /// It contains the number of individual points received, the number of
 /// detected features, and the total distance covered as the cumulative sum of
 /// the distance between each point.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RouteSummary {
     /// The number of points received.
@@ -221,7 +227,7 @@ pub mod route_guide_client {
 pub mod route_guide_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    ///Generated trait containing gRPC methods that should be implemented for use with RouteGuideServer.
+    /// Generated trait containing gRPC methods that should be implemented for use with RouteGuideServer.
     #[async_trait]
     pub trait RouteGuide: Send + Sync + 'static {
         /// A simple RPC.
@@ -234,7 +240,7 @@ pub mod route_guide_server {
             &self,
             request: tonic::Request<super::Point>,
         ) -> Result<tonic::Response<super::Feature>, tonic::Status>;
-        ///Server streaming response type for the ListFeatures method.
+        /// Server streaming response type for the ListFeatures method.
         type ListFeaturesStream: futures_core::Stream<Item = Result<super::Feature, tonic::Status>>
             + Send
             + 'static;
@@ -256,7 +262,7 @@ pub mod route_guide_server {
             &self,
             request: tonic::Request<tonic::Streaming<super::Point>>,
         ) -> Result<tonic::Response<super::RouteSummary>, tonic::Status>;
-        ///Server streaming response type for the RouteChat method.
+        /// Server streaming response type for the RouteChat method.
         type RouteChatStream: futures_core::Stream<Item = Result<super::RouteNote, tonic::Status>>
             + Send
             + 'static;

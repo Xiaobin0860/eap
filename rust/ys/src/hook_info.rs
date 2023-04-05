@@ -180,17 +180,25 @@ impl HookInfo {
         }
     }
 
-    fn search_type(&self, types: &str, info: &mut TypeInfo) {
-        let re = &format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", &info.ename);
-        let re = Regex::new(re).unwrap();
+    pub fn search_type(&self, types: &str, info: &mut TypeInfo) {
+        let re = if info.ename.ends_with("__Enum") {
+            format!(r"enum {} \{{.*\n([^}}]*\n)*\}};", &info.ename)
+        } else {
+            format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", &info.ename)
+        };
+        let re = Regex::new(&re).unwrap();
         if let Some(mat) = re.find(types) {
             info.typdef = mat.as_str().replace(&info.ename, &self.name);
         }
     }
 
     fn ios_search_type(&self, types: &str, info: &mut TypeInfo) {
-        let re = &format!(r"struct {}__Fields \{{.*\n([^}}]*\n)*\}};", &info.ename);
-        let re = Regex::new(re).unwrap();
+        let re = if info.ename.ends_with("__Enum") {
+            format!(r"enum {} \{{.*\n([^}}]*\n)*\}};", &info.ename)
+        } else {
+            format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", &info.ename)
+        };
+        let re = Regex::new(&re).unwrap();
         if let Some(mat) = re.find(types) {
             info.typdef = mat.as_str().replace(&info.ename, &self.name);
         }

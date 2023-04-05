@@ -28,7 +28,7 @@ impl FuncName {
             let re = Regex::new(&fp[2..]).unwrap();
             let mat = re.find(contents).unwrap().as_str();
             //VCHumanoidMove_IAEEOEMELPD, (VCHumanoidMove * __this, Vector3 GNGMCEBLIKL,
-            *mat.split(',').collect::<Vec<_>>()[idx]
+            mat.split(',').collect::<Vec<_>>()[idx]
                 .split(' ')
                 .collect::<Vec<_>>()
                 .last()

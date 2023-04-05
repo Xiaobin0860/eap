@@ -9,7 +9,7 @@ use strfmt::strfmt;
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use walkdir::WalkDir;
-use ys::{AppFunc, FuncName, HookInfo};
+use ys::{AppFunc, FuncName, HookInfo, TypeInfo};
 
 /// Program to find ys-gc offsets
 #[derive(Parser, Debug)]
@@ -27,7 +27,7 @@ struct Args {
 fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "warn,ys=trace".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "warn,ys=debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -274,7 +274,23 @@ fn main() -> Result<()> {
                     let (typ, name) = pv[p.idx];
                     if let Some(pt) = p.typ.as_ref() {
                         try_insert(&mut name_map, pt, typ, &mut encs);
-                        xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
+                        if pt.ends_with("__Enum") {
+                            let pattern = HookInfo::new(pt.clone(), "".to_string());
+                            let mut info = TypeInfo::new(pt.clone(), typ.to_string());
+                            debug!("Enum: {pattern:?} {info}");
+                            pattern.search_type(types, &mut info);
+                            let out = &od.join(format!("{}.h", pt));
+                            info.write_to_file(out);
+
+                            //ios
+                            if !ios_types.is_empty() {
+                                let info = pattern.isearch(pt, typ, &ios_lines, ios_types);
+                                let out = &ios_od.join(format!("{}.h", pt));
+                                info.write_to_file(out);
+                            }
+                        } else {
+                            xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
+                        }
                     }
                     if let Some(pn) = p.name.as_ref() {
                         try_insert(&mut name_map, pn, name, &mut encs);
