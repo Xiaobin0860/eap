@@ -272,11 +272,18 @@ fn main() -> Result<()> {
                 }
                 for p in ps {
                     let (typ, name) = pv[p.idx];
+                    let mut en = typ.to_string();
                     if let Some(pt) = p.typ.as_ref() {
-                        try_insert(&mut name_map, pt, typ, &mut encs);
                         if pt.ends_with("__Enum") {
+                            //BaseEntity先找到并替换为明文了
                             let pattern = HookInfo::new(pt.clone(), "".to_string());
-                            let mut info = TypeInfo::new(pt.clone(), typ.to_string());
+                            if typ.starts_with("BaseEntity_") {
+                                en = typ.replace("BaseEntity", name_map.get("BaseEntity").unwrap());
+                                let name2 = pt.split('_').collect::<Vec<_>>()[1];
+                                let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                                try_insert(&mut name_map, name2, enc2, &mut encs);
+                            }
+                            let mut info = TypeInfo::new(pt.clone(), en.clone());
                             debug!("Enum: {pattern:?} {info}");
                             pattern.search_type(types, &mut info);
                             let out = &od.join(format!("{}.h", pt));
@@ -291,6 +298,7 @@ fn main() -> Result<()> {
                         } else {
                             xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
                         }
+                        try_insert(&mut name_map, pt, &en, &mut encs);
                     }
                     if let Some(pn) = p.name.as_ref() {
                         try_insert(&mut name_map, pn, name, &mut encs);
