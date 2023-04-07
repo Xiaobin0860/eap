@@ -295,6 +295,14 @@ fn main() -> Result<()> {
                                 let out = &ios_od.join(format!("{}.h", pt));
                                 info.write_to_file(out);
                             }
+                        } else if pt.starts_with("List_") {
+                            let name2 = pt.split('_').collect::<Vec<_>>()[1];
+                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                            try_insert(&mut name_map, name2, enc2, &mut encs);
+                            xps.push(HookInfo::new(
+                                name2.to_owned(),
+                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
+                            ));
                         } else {
                             xps.push(HookInfo::new(
                                 pt.clone(),
