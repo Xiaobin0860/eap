@@ -296,7 +296,10 @@ fn main() -> Result<()> {
                                 info.write_to_file(out);
                             }
                         } else {
-                            xps.push(HookInfo::new(pt.clone(), format!(r"DO.*, {}_\w+, \(", typ)));
+                            xps.push(HookInfo::new(
+                                pt.clone(),
+                                format!(r"DO.*, {}_\.*\w+, \(", typ),
+                            ));
                         }
                         try_insert(&mut name_map, pt, &en, &mut encs);
                     }
