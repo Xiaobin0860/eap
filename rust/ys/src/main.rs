@@ -338,24 +338,26 @@ fn main() -> Result<()> {
     let enc = &od.join("name_map.json");
     fs::write(enc, s)?;
 
-    let mb = name_map.get("MessageBase").unwrap();
-    trace!("MessageBase => {mb}");
-    let mre = Regex::new(&format!(
-        r"struct .*__Fields.*\n    struct {}__Fields.*\n([^}}]*\n)*\}};",
-        mb
-    ))
-    .unwrap();
-    let bre = Regex::new(&format!(r"    struct {}__Fields.*\n", mb)).unwrap();
-    for m in mre.find_iter(types) {
-        let m = m.as_str();
-        let mn = m.split('_').collect::<Vec<_>>()[0]
-            .split(' ')
-            .collect::<Vec<_>>()[1];
-        let pbf = &pbd.join(format!("{mn}.proto"));
-        let m = m.replacen("__Fields", "", 1);
-        let m = m.replacen("struct", "message", 1);
-        let mm = bre.replace(&m, "");
-        fs::write(pbf, mm.as_bytes())?;
+    if pbd.exists() {
+        let mb = name_map.get("MessageBase").unwrap();
+        trace!("MessageBase => {mb}");
+        let mre = Regex::new(&format!(
+            r"struct .*__Fields.*\n    struct {}__Fields.*\n([^}}]*\n)*\}};",
+            mb
+        ))
+        .unwrap();
+        let bre = Regex::new(&format!(r"    struct {}__Fields.*\n", mb)).unwrap();
+        for m in mre.find_iter(types) {
+            let m = m.as_str();
+            let mn = m.split('_').collect::<Vec<_>>()[0]
+                .split(' ')
+                .collect::<Vec<_>>()[1];
+            let pbf = &pbd.join(format!("{mn}.proto"));
+            let m = m.replacen("__Fields", "", 1);
+            let m = m.replacen("struct", "message", 1);
+            let mm = bre.replace(&m, "");
+            fs::write(pbf, mm.as_bytes())?;
+        }
     }
 
     //找hook地址
