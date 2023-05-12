@@ -9,7 +9,7 @@ use strfmt::strfmt;
 use tracing::{debug, info, trace};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use walkdir::WalkDir;
-use ys::{AppFunc, FuncName, HookInfo, TypeInfo};
+use ys::{AppFunc, FuncName, HookInfo, TypeInfo, TypeName};
 
 /// Program to find ys-gc offsets
 #[derive(Parser, Debug)]
@@ -126,6 +126,18 @@ fn main() -> Result<()> {
     for fname in fnames.iter() {
         let ename = fname.search_ename(funcs);
         try_insert(&mut name_map, &fname.name, ename, &mut encs);
+    }
+    let tnames_file = &rys.join("tnames.json");
+    let tnames_string = fs::read_to_string(tnames_file)?;
+    let tnames: Vec<TypeName> = serde_json::from_str(&tnames_string)?;
+    debug!("tnames count: {}", tnames.len());
+    for tname in tnames.iter() {
+        let ename = tname.search_ename(funcs);
+        xps.push(HookInfo::new(
+            tname.name.clone(),
+            format!(r"DO.*, {}_\.*\w+, \(", ename),
+        ));
+        try_insert(&mut name_map, &tname.name, ename, &mut encs);
     }
     //找加密
     for pattern in patterns.iter_mut() {
@@ -303,6 +315,20 @@ fn main() -> Result<()> {
                                 name2.to_owned(),
                                 format!(r"DO.*, {}_\.*\w+, \(", enc2),
                             ));
+                        } else if pt.starts_with("-") {
+                            let name2 = pt.split('-').collect::<Vec<_>>()[1];
+                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                            try_insert(&mut name_map, name2, enc2, &mut encs);
+                            if let Some(pn) = p.name.as_ref() {
+                                try_insert(&mut name_map, pn, name, &mut encs);
+                            }
+                            let xp = HookInfo::new(
+                                name2.to_owned(),
+                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
+                            );
+                            debug!("-----{xp:?}");
+                            xps.push(xp);
+                            continue;
                         } else {
                             xps.push(HookInfo::new(
                                 pt.clone(),
