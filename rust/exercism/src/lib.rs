@@ -1,5 +1,6 @@
-pub mod reverse_string;
+pub mod clock;
 pub mod gigasecond;
+pub mod reverse_string;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
