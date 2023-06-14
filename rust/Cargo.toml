@@ -8,4 +8,5 @@ members = [
     "leetcode",
     "xdiff",
     "ys",
+    "exercism",
 ]

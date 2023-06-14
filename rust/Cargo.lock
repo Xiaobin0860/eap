@@ -818,6 +818,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "exercism"
+version = "0.1.0"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "expat-sys"
 version = "2.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
