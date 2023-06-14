@@ -10,3 +10,4 @@ grapheme = []
 
 [dependencies]
 unicode-segmentation = "1"
+time = "0.3"
