@@ -14,7 +14,7 @@ impl Clock {
             hours -= 1;
             minutes += 60;
         }
-        hours = hours % 24;
+        hours %= 24;
         if hours < 0 {
             hours += 24;
         }

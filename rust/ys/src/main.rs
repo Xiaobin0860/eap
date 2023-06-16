@@ -315,7 +315,7 @@ fn main() -> Result<()> {
                                 name2.to_owned(),
                                 format!(r"DO.*, {}_\.*\w+, \(", enc2),
                             ));
-                        } else if pt.starts_with("-") {
+                        } else if pt.starts_with('-') {
                             let name2 = pt.split('-').collect::<Vec<_>>()[1];
                             let enc2 = typ.split('_').collect::<Vec<_>>()[1];
                             try_insert(&mut name_map, name2, enc2, &mut encs);
