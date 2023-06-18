@@ -3,6 +3,7 @@ pub mod clock;
 pub mod gigasecond;
 pub mod reverse_string;
 pub mod space_age;
+pub mod sublist;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
