@@ -1,6 +1,7 @@
 pub mod anagram;
 pub mod clock;
 pub mod gigasecond;
+pub mod luhn;
 pub mod minesweeper;
 pub mod reverse_string;
 pub mod space_age;
