@@ -2,6 +2,7 @@ pub mod anagram;
 pub mod clock;
 pub mod gigasecond;
 pub mod luhn;
+pub mod macros;
 pub mod minesweeper;
 pub mod parallel_letter_frequency;
 pub mod reverse_string;
