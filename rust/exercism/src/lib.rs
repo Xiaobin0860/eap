@@ -5,6 +5,7 @@ pub mod luhn;
 pub mod macros;
 pub mod minesweeper;
 pub mod parallel_letter_frequency;
+pub mod poker;
 pub mod reverse_string;
 pub mod space_age;
 pub mod sublist;
