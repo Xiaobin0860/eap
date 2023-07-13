@@ -65,18 +65,11 @@ impl From<&str> for PockerHand {
         match counts[0] {
             2 => {
                 if counts[1] == 2 {
-                    //两对排序
-                    let mut values = values;
-                    //为什么这个分支需要指明类型，而下面的分支不需要呢？
-                    values[..2].sort_unstable_by(|a: &u8, b: &u8| b.cmp(a));
                     PockerHand {
                         card_rank: CardRank::TwoPairs,
                         values,
                     }
                 } else {
-                    //三单张排序
-                    let mut values = values;
-                    values[1..].sort_unstable_by(|a, b| b.cmp(a));
                     PockerHand {
                         card_rank: CardRank::OnePair,
                         values,
@@ -90,9 +83,6 @@ impl From<&str> for PockerHand {
                         values,
                     }
                 } else {
-                    //两单张排序
-                    let mut values = values;
-                    values[1..].sort_unstable_by(|a, b| b.cmp(a));
                     PockerHand {
                         card_rank: CardRank::ThreeOfAKind,
                         values,
@@ -106,7 +96,6 @@ impl From<&str> for PockerHand {
             _ => {
                 //从大到小排序
                 let mut values = values;
-                values.sort_unstable_by(|a, b| b.cmp(a));
                 if values == [14, 5, 4, 3, 2] {
                     values = vec![5, 4, 3, 2, 1];
                 }
