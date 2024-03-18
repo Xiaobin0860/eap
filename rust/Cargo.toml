@@ -9,4 +9,5 @@ members = [
     "xdiff",
     "ys",
     "exercism",
+    "mike",
 ]

@@ -397,6 +397,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn search_xps(
     od: &Path,
     ios_od: &Path,
