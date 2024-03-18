@@ -1,5 +1,6 @@
 pub mod anagram;
 pub mod clock;
+pub mod forth;
 pub mod gigasecond;
 pub mod luhn;
 pub mod macros;
