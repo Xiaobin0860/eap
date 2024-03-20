@@ -128,6 +128,12 @@ pub type AppResult<T> = std::result::Result<T, AppError>;
 
 pub struct JsonRes(Json<Res>);
 
+impl JsonRes {
+    pub fn from_code(code: i32) -> Self {
+        Self(Json(Res::from_code(code)))
+    }
+}
+
 impl<T> From<T> for JsonRes
 where
     T: Serialize,
@@ -165,13 +171,27 @@ async fn todo_create(State(app): State<TodoApp>, Json(c): Json<TodoCreate>) -> A
     Ok(id.into())
 }
 
-async fn todo_update() -> AppResult<JsonRes> {
-    todo!()
+#[derive(Debug, Deserialize)]
+struct TodoUpdate {
+    id: u64,
+    des: Option<String>,
+    done: Option<u8>,
+}
+async fn todo_update(State(app): State<TodoApp>, Json(u): Json<TodoUpdate>) -> AppResult<JsonRes> {
+    let mut todo = app.todo_get(u.id).await?;
+    if let Some(des) = u.des {
+        todo.des = des;
+    }
+    if let Some(done) = u.done {
+        todo.done = done;
+    }
+    let rc = app.todo_update(&todo).await?;
+    Ok(rc.into())
 }
 
 async fn todo_delete(State(app): State<TodoApp>, Path(id): Path<u64>) -> AppResult<JsonRes> {
-    app.todo_delete(id).await?;
-    Ok(0.into())
+    let rc = app.todo_delete(id).await?;
+    Ok(rc.into())
 }
 
 async fn todo_get(State(app): State<TodoApp>, Path(id): Path<u64>) -> AppResult<JsonRes> {
@@ -236,12 +256,12 @@ impl TodoApp {
         Ok(res.last_insert_id())
     }
 
-    async fn todo_delete(&self, id: u64) -> Result<()> {
+    async fn todo_delete(&self, id: u64) -> Result<u64> {
         trace!("todo_delete id: {id}");
-        sqlx::query!(r#"DELETE FROM todo WHERE id = ?"#, id)
+        let res = sqlx::query!(r#"DELETE FROM todo WHERE id = ?"#, id)
             .execute(&self.pool)
             .await?;
-        Ok(())
+        Ok(res.rows_affected())
     }
 
     async fn todo_get(&self, id: u64) -> Result<Todo> {
@@ -250,5 +270,18 @@ impl TodoApp {
             .fetch_one(&self.pool)
             .await?;
         Ok(todo)
+    }
+
+    async fn todo_update(&self, todo: &Todo) -> Result<u64> {
+        trace!("todo_update todo: {todo:?}");
+        let res = sqlx::query!(
+            r#"UPDATE todo SET des = ?, done = ? WHERE id = ?"#,
+            todo.des,
+            todo.done,
+            todo.id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(res.rows_affected())
     }
 }
