@@ -4,6 +4,7 @@ use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    println!("{:?}", std::env::current_dir());
     let stream = TcpStream::connect("127.0.0.1:8888").await?;
     println!("Connected to server");
 
