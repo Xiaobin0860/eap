@@ -2,6 +2,9 @@ pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
 
+mod token_output_stream;
+pub use token_output_stream::*;
+
 #[cfg(test)]
 mod tests {
     use super::*;
