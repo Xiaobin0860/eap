@@ -76,7 +76,9 @@ fn main() -> anyhow::Result<()> {
         total_size_in_bytes,
         start.elapsed().as_secs_f32(),
     );
-    let mut model = quantized_model::ModelWeights::from_gguf(model, &mut file, &Device::Cpu)?;
+
+    let device = Device::cuda_if_available(0)?;
+    let mut model = quantized_model::ModelWeights::from_gguf(model, &mut file, &device)?;
     println!("model built");
 
     // load tokenizer
