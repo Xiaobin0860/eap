@@ -4,10 +4,9 @@
 // #[cfg(feature = "accelerate")]
 // extern crate accelerate_src;
 
-use ab_glyph::PxScale;
 use mike::{Multiples, YoloV8, YoloV8Pose, NAMES};
 
-use ab_glyph::FontRef;
+use ab_glyph::{FontRef, PxScale};
 use candle_core::utils::{cuda_is_available, metal_is_available};
 use candle_core::{DType, Device, IndexOp, Result, Tensor};
 use candle_nn::{Module, VarBuilder};

@@ -33,5 +33,4 @@ clap = { version = "4", features = ["derive"] }
 image = "0.25"
 imageproc = "0.24"
 tracing-chrome = "0.7"
-rusttype = "0.9"
 ab_glyph = "0.2"
