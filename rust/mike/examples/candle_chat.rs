@@ -110,7 +110,7 @@ fn main() -> anyhow::Result<()> {
 
         let start_prompt_processing = std::time::Instant::now();
         let mut next_token = {
-            let input = Tensor::new(prompt_tokens, &Device::Cpu)?.unsqueeze(0)?;
+            let input = Tensor::new(prompt_tokens, &device)?.unsqueeze(0)?;
             let logits = model.forward(&input, 0)?;
             let logits = logits.squeeze(0)?;
             logits_processor.sample(&logits)?
@@ -128,7 +128,7 @@ fn main() -> anyhow::Result<()> {
         let to_sample = args.sample_len.saturating_sub(1);
         let mut sampled = 0;
         for index in 0..to_sample {
-            let input = Tensor::new(&[next_token], &Device::Cpu)?.unsqueeze(0)?;
+            let input = Tensor::new(&[next_token], &device)?.unsqueeze(0)?;
             let logits = model.forward(&input, prompt_tokens.len() + index)?;
             let logits = logits.squeeze(0)?;
             let logits = if args.repeat_penalty == 1. {
