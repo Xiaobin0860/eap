@@ -4558,6 +4558,7 @@ dependencies = [
  "image 0.25.0",
  "imageproc",
  "r2d2",
+ "rand",
  "redis",
  "serde",
  "serde_json",
