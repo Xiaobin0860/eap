@@ -205,145 +205,36 @@ fn main() -> Result<()> {
     //替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
+    xps.clear();
     //再次找加密串.
     let beebyte_dir = &rys.join("beebyte");
-    for entry in WalkDir::new(beebyte_dir).into_iter().filter_map(|e| e.ok()) {
-        let f = entry.path();
-        trace!("{}", f.display());
-        let ext = f.extension();
-        if ext.is_none() || ext.unwrap().to_str().unwrap() != "json" {
-            continue;
-        }
-        let name = f.file_name().unwrap().to_str().unwrap();
-        let cname = name.split('.').collect::<Vec<_>>()[0];
-        let h = &od.join(name.replace(".json", ".h"));
-        trace!("{} cname={cname}, h={}", f.display(), h.display());
-        let contents = fs::read_to_string(h)?;
-        let contents = contents.as_str();
-        let fnames_string = fs::read_to_string(f)?;
-        let fnames: Vec<FuncName> = serde_json::from_str(&fnames_string)?;
-        debug!("fnames count: {}", fnames.len());
-        for fname in fnames.iter() {
-            let ename = fname.search_ename(contents);
-            try_insert(&mut name_map, &fname.name, ename, &mut encs);
-        }
-    }
+    search_funcs(
+        beebyte_dir,
+        od,
+        ios_od,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+        &mut encs,
+    )?;
     //再次替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
     let hooks_dir = &rys.join("hooks");
     //params
-    xps.clear();
-    for entry in WalkDir::new(hooks_dir).into_iter().filter_map(|e| e.ok()) {
-        let f = entry.path();
-        trace!("{}", f.display());
-        let ext = f.extension();
-        if ext.is_none() || ext.unwrap().to_str().unwrap() != "json" {
-            continue;
-        }
-        let name = f.file_name().unwrap().to_str().unwrap();
-        let cname = &name.replace(".json", "");
-        let h = &od.join(name.replace(".json", ".h"));
-        trace!("{} cname={cname}, h={}", f.display(), h.display());
-        let contents = fs::read_to_string(h)?;
-        let contents = contents.as_str();
-        let hooks = fs::read_to_string(f)?;
-        let hooks = hooks.as_str();
-        let mut hooks: Vec<AppFunc> = serde_json::from_str(hooks)?;
-        for hook in hooks.iter_mut() {
-            if let Some(name) = hook.name.as_ref() {
-                trace!("{hook:?}");
-                let re = Regex::new(&hook.mp)?;
-                let mat = re.find(contents).unwrap().as_str();
-                trace!("{mat}");
-                //DO_APP_FUNC(0x048C6300, void, GadgetInteractRsp_FEIJDEOEGML, (
-                let ef = *mat.split(',').collect::<Vec<_>>()[2]
-                    .split('_')
-                    .collect::<Vec<_>>()
-                    .last()
-                    .unwrap();
-                try_insert(&mut name_map, name, ef, &mut encs);
-            }
-            if let Some(ps) = hook.ps.as_ref() {
-                trace!("{hook:?}");
-                let re = Regex::new(&hook.mp)?;
-                let mat = re.find(contents).unwrap().as_str();
-                trace!("{mat}");
-                //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
-                let pms = mat.split(", (").collect::<Vec<_>>()[1];
-                //EHOCMLAEENL * __this, uint32_t BKLDHNCDCMG, MethodInfo* method));
-                let pms = pms.split(')').collect::<Vec<_>>()[0];
-                let pms = pms.split(", ").collect::<Vec<_>>();
-                let mut pv = Vec::new();
-                for pm in pms {
-                    let pm = pm.split(' ').collect::<Vec<_>>();
-                    let typ = pm[0].split('*').collect::<Vec<_>>()[0];
-                    let name = *pm.last().unwrap();
-                    trace!("{typ},{name}");
-                    pv.push((typ, name));
-                }
-                for p in ps {
-                    let (typ, name) = pv[p.idx];
-                    let mut en = typ.to_string();
-                    if let Some(pt) = p.typ.as_ref() {
-                        if pt.ends_with("__Enum") {
-                            //BaseEntity先找到并替换为明文了
-                            let pattern = HookInfo::new(pt.clone(), "".to_string());
-                            if typ.starts_with("BaseEntity_") {
-                                en = typ.replace("BaseEntity", name_map.get("BaseEntity").unwrap());
-                                let name2 = pt.split('_').collect::<Vec<_>>()[1];
-                                let enc2 = typ.split('_').collect::<Vec<_>>()[1];
-                                try_insert(&mut name_map, name2, enc2, &mut encs);
-                            }
-                            let mut info = TypeInfo::new(pt.clone(), en.clone());
-                            debug!("Enum: {pattern:?} {info}");
-                            pattern.search_type(types, &mut info);
-                            let out = &od.join(format!("{}.h", pt));
-                            info.write_to_file(out);
-
-                            //ios
-                            if !ios_types.is_empty() {
-                                let info = pattern.isearch(pt, typ, &ios_lines, ios_types);
-                                let out = &ios_od.join(format!("{}.h", pt));
-                                info.write_to_file(out);
-                            }
-                        } else if pt.starts_with("List_") {
-                            let name2 = pt.split('_').collect::<Vec<_>>()[1];
-                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
-                            try_insert(&mut name_map, name2, enc2, &mut encs);
-                            xps.push(HookInfo::new(
-                                name2.to_owned(),
-                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
-                            ));
-                        } else if pt.starts_with('-') {
-                            let name2 = pt.split('-').collect::<Vec<_>>()[1];
-                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
-                            try_insert(&mut name_map, name2, enc2, &mut encs);
-                            if let Some(pn) = p.name.as_ref() {
-                                try_insert(&mut name_map, pn, name, &mut encs);
-                            }
-                            let xp = HookInfo::new(
-                                name2.to_owned(),
-                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
-                            );
-                            debug!("-----{xp:?}");
-                            xps.push(xp);
-                            continue;
-                        } else {
-                            xps.push(HookInfo::new(
-                                pt.clone(),
-                                format!(r"DO.*, {}_\.*\w+, \(", typ),
-                            ));
-                        }
-                        try_insert(&mut name_map, pt, &en, &mut encs);
-                    }
-                    if let Some(pn) = p.name.as_ref() {
-                        try_insert(&mut name_map, pn, name, &mut encs);
-                    }
-                }
-            }
-        }
-    }
+    search_funcs(
+        hooks_dir,
+        od,
+        ios_od,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+        &mut encs,
+    )?;
     search_xps(
         od,
         ios_od,
@@ -394,6 +285,131 @@ fn main() -> Result<()> {
         gen_hooks(ios_od, hooks_dir)?;
     }
 
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn search_funcs(
+    d: &PathBuf,
+    od: &Path,
+    ios_od: &Path,
+    types: &str,
+    ios_lines: &[&str],
+    ios_types: &str,
+    xps: &mut Vec<HookInfo>,
+    name_map: &mut BTreeMap<String, String>,
+    encs: &mut HashSet<String>,
+) -> Result<()> {
+    for entry in WalkDir::new(d).into_iter().filter_map(|e| e.ok()) {
+        let f = entry.path();
+        trace!("{}", f.display());
+        let ext = f.extension();
+        if ext.is_none() || ext.unwrap().to_str().unwrap() != "json" {
+            continue;
+        }
+        let name = f.file_name().unwrap().to_str().unwrap();
+        let cname = &name.replace(".json", "");
+        let h = &od.join(name.replace(".json", ".h"));
+        trace!("{} cname={cname}, h={}", f.display(), h.display());
+        let contents = fs::read_to_string(h)?;
+        let contents = contents.as_str();
+        let hooks = fs::read_to_string(f)?;
+        let hooks = hooks.as_str();
+        let mut hooks: Vec<AppFunc> = serde_json::from_str(hooks)?;
+        for hook in hooks.iter_mut() {
+            if let Some(name) = hook.name.as_ref() {
+                trace!("{hook:?}");
+                let re = Regex::new(&hook.mp)?;
+                let mat = re.find(contents).unwrap().as_str();
+                trace!("{mat}");
+                //DO_APP_FUNC(0x048C6300, void, GadgetInteractRsp_FEIJDEOEGML, (
+                let ef = *mat.split(',').collect::<Vec<_>>()[2]
+                    .split('_')
+                    .collect::<Vec<_>>()
+                    .last()
+                    .unwrap();
+                try_insert(name_map, name, ef, encs);
+            }
+            if let Some(ps) = hook.ps.as_ref() {
+                trace!("{hook:?}");
+                let re = Regex::new(&hook.mp)?;
+                let mat = re.find(contents).unwrap().as_str();
+                trace!("{mat}");
+                //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
+                let pms = mat.split(", (").collect::<Vec<_>>()[1];
+                //EHOCMLAEENL * __this, uint32_t BKLDHNCDCMG, MethodInfo* method));
+                let pms = pms.split(')').collect::<Vec<_>>()[0];
+                let pms = pms.split(", ").collect::<Vec<_>>();
+                let mut pv = Vec::new();
+                for pm in pms {
+                    let pm = pm.split(' ').collect::<Vec<_>>();
+                    let typ = pm[0].split('*').collect::<Vec<_>>()[0];
+                    let name = *pm.last().unwrap();
+                    trace!("{typ},{name}");
+                    pv.push((typ, name));
+                }
+                for p in ps {
+                    let (typ, name) = pv[p.idx];
+                    let mut en = typ.to_string();
+                    if let Some(pt) = p.typ.as_ref() {
+                        if pt.ends_with("__Enum") {
+                            //BaseEntity先找到并替换为明文了
+                            let pattern = HookInfo::new(pt.clone(), "".to_string());
+                            if typ.starts_with("BaseEntity_") {
+                                en = typ.replace("BaseEntity", name_map.get("BaseEntity").unwrap());
+                                let name2 = pt.split('_').collect::<Vec<_>>()[1];
+                                let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                                try_insert(name_map, name2, enc2, encs);
+                            }
+                            let mut info = TypeInfo::new(pt.clone(), en.clone());
+                            debug!("Enum: {pattern:?} {info}");
+                            pattern.search_type(types, &mut info);
+                            let out = &od.join(format!("{}.h", pt));
+                            info.write_to_file(out);
+
+                            //ios
+                            if !ios_types.is_empty() {
+                                let info = pattern.isearch(pt, typ, ios_lines, ios_types);
+                                let out = &ios_od.join(format!("{}.h", pt));
+                                info.write_to_file(out);
+                            }
+                        } else if pt.starts_with("List_") {
+                            let name2 = pt.split('_').collect::<Vec<_>>()[1];
+                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                            try_insert(name_map, name2, enc2, encs);
+                            xps.push(HookInfo::new(
+                                name2.to_owned(),
+                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
+                            ));
+                        } else if pt.starts_with('-') {
+                            let name2 = pt.split('-').collect::<Vec<_>>()[1];
+                            let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                            try_insert(name_map, name2, enc2, encs);
+                            if let Some(pn) = p.name.as_ref() {
+                                try_insert(name_map, pn, name, encs);
+                            }
+                            let xp = HookInfo::new(
+                                name2.to_owned(),
+                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
+                            );
+                            debug!("-----{xp:?}");
+                            xps.push(xp);
+                            continue;
+                        } else {
+                            xps.push(HookInfo::new(
+                                pt.clone(),
+                                format!(r"DO.*, {}_\.*\w+, \(", typ),
+                            ));
+                        }
+                        try_insert(name_map, pt, &en, encs);
+                    }
+                    if let Some(pn) = p.name.as_ref() {
+                        try_insert(name_map, pn, name, encs);
+                    }
+                }
+            }
+        }
+    }
     Ok(())
 }
 
