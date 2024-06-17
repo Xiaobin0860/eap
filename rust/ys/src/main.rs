@@ -27,7 +27,7 @@ struct Args {
 fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "warn,ys=debug".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "warn,ys=trace".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -55,6 +55,10 @@ fn main() -> Result<()> {
     let ios_types_file = &ios_dir.join("il2cpp-types.h");
     let unencs_file = &rys.join("unencs.json");
     let unencs_string = fs::read_to_string(unencs_file)?;
+    let names_file = &rys.join("name_map.json");
+    let names_string = fs::read_to_string(names_file)?;
+    let mtypes_file = &rys.join("mtypes.json");
+    let mtypes_string = fs::read_to_string(mtypes_file)?;
     let unencs: Vec<String> = serde_json::from_str(&unencs_string)?;
     debug!("unencs count: {}", unencs.len());
     let patterns_file = &rys.join("patterns.json");
@@ -118,6 +122,10 @@ fn main() -> Result<()> {
     let mut name_map = BTreeMap::new(); //name=>enc
     let mut encs = HashSet::new();
     let mut xps = Vec::new();
+    let names: HashMap<String, String> = serde_json::from_str(&names_string)?;
+    for (k, v) in names.iter() {
+        try_insert(&mut name_map, k, v, &mut encs);
+    }
     //找加密串.
     let fnames_file = &rys.join("fnames.json");
     let fnames_string = fs::read_to_string(fnames_file)?;
@@ -138,6 +146,16 @@ fn main() -> Result<()> {
             format!(r"DO.*, {}_\.*\w+, \(", ename),
         ));
         try_insert(&mut name_map, &tname.name, ename, &mut encs);
+    }
+    let names: HashMap<String, String> = serde_json::from_str(&mtypes_string)?;
+    for (k, v) in names.iter() {
+        let mut info = TypeInfo::new(k.clone(), v.clone());
+        info.search_methods(&lines);
+        info.search_type(types);
+        let out = &od.join(format!("{}.h", &info.name));
+        debug!("{info}, out={out:?}");
+        info.write_to_file(out);
+        try_insert(&mut name_map, k, v, &mut encs);
     }
     //找加密
     for pattern in patterns.iter_mut() {
@@ -219,6 +237,45 @@ fn main() -> Result<()> {
         &mut name_map,
         &mut encs,
     )?;
+    search_xps(
+        od,
+        ios_od,
+        &lines,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+        &mut encs,
+    )?;
+    xps.clear();
+    //再次替换密文
+    rep_encs(od, &name_map);
+    rep_encs(ios_od, &name_map);
+    let beebyte_dir = &rys.join("beebyte2");
+    search_funcs(
+        beebyte_dir,
+        od,
+        ios_od,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+        &mut encs,
+    )?;
+    search_xps(
+        od,
+        ios_od,
+        &lines,
+        types,
+        &ios_lines,
+        ios_types,
+        &mut xps,
+        &mut name_map,
+        &mut encs,
+    )?;
+    xps.clear();
     //再次替换密文
     rep_encs(od, &name_map);
     rep_encs(ios_od, &name_map);
@@ -376,6 +433,14 @@ fn search_funcs(
                         } else if pt.starts_with("List_") {
                             let name2 = pt.split('_').collect::<Vec<_>>()[1];
                             let enc2 = typ.split('_').collect::<Vec<_>>()[1];
+                            try_insert(name_map, name2, enc2, encs);
+                            xps.push(HookInfo::new(
+                                name2.to_owned(),
+                                format!(r"DO.*, {}_\.*\w+, \(", enc2),
+                            ));
+                        } else if pt.ends_with("__Array") {
+                            let name2 = pt.split('_').collect::<Vec<_>>()[0];
+                            let enc2 = typ.split('_').collect::<Vec<_>>()[0];
                             try_insert(name_map, name2, enc2, encs);
                             xps.push(HookInfo::new(
                                 name2.to_owned(),

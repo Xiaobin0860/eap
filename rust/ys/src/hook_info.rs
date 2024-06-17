@@ -44,6 +44,29 @@ impl TypeInfo {
         }
         w.flush().unwrap();
     }
+
+    pub fn search_methods(&mut self, lines: &[&str]) {
+        let re = &format!(r"DO.*, {}_\.*\w+, \(", &self.ename);
+        let re = Regex::new(re).unwrap();
+        for &line in lines {
+            if !re.is_match(line) {
+                continue;
+            }
+            self.methods.push(line.replace(&self.ename, &self.name));
+        }
+    }
+
+    pub fn search_type(&mut self, types: &str) {
+        let re = if self.ename.ends_with("__Enum") {
+            format!(r"enum class {} .*\n([^}}]*\n)*\}};", &self.ename)
+        } else {
+            format!(r"struct .*{}__Fields \{{.*\n([^}}]*\n)*\}};", &self.ename)
+        };
+        let re = Regex::new(&re).unwrap();
+        if let Some(mat) = re.find(types) {
+            self.typdef = mat.as_str().replace(&self.ename, &self.name);
+        }
+    }
 }
 
 impl Display for TypeInfo {
@@ -82,9 +105,9 @@ impl HookInfo {
                 let ename = &ss[0][1..];
                 debug!("{} => {}", self.name, ename);
                 let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
+                info.search_methods(lines);
+                info.search_type(types);
                 self.ename = Some(ename.to_owned());
-                self.search_methods(lines, &mut info);
-                self.search_type(types, &mut info);
                 return Some(info);
             }
         }
@@ -120,9 +143,9 @@ impl HookInfo {
             };
             debug!("{} => {}", self.name, ename);
             let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
+            info.search_methods(lines);
+            info.search_type(types);
             self.ename = Some(ename.to_owned());
-            self.search_methods(lines, &mut info);
-            self.search_type(types, &mut info);
             Some(info)
         } else {
             None
@@ -147,9 +170,9 @@ impl HookInfo {
             let ename = &ss[0][1..];
             debug!("{} => {}", self.name, ename);
             let mut info = TypeInfo::new(self.name.to_owned(), ename.to_owned());
+            info.search_methods(lines);
+            info.search_type(types);
             self.ename = Some(ename.to_owned());
-            self.search_methods(lines, &mut info);
-            self.search_type(types, &mut info);
             Some(info)
         } else {
             None
