@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -27,6 +26,10 @@ func (robot *ProxyRobot) isSkipMessage(message *Message) bool {
 	defer robot.Mutex.Unlock()
 
 	L := robot.LState
+	if L == nil {
+		log.Println("isSkipMessage L is nil")
+		return false
+	}
 	table := robot.messageToTable(message)
 
 	LP := lua.P{Fn: L.GetGlobal("isSkipMessage"), Protect: true, NRet: 1}
@@ -47,6 +50,10 @@ func (robot *ProxyRobot) onSendMessage(message *Message) {
 	defer robot.Mutex.Unlock()
 
 	L := robot.LState
+	if L == nil {
+		log.Println("onSendMessage L is nil")
+		return
+	}
 	table := robot.messageToTable(message)
 
 	LP := lua.P{Fn: L.GetGlobal("onSendMessage"), Protect: true}
@@ -61,6 +68,10 @@ func (robot *ProxyRobot) onRecvMessage(message *Message) {
 	defer robot.Mutex.Unlock()
 
 	L := robot.LState
+	if L == nil {
+		log.Println("onRecvMessage L is nil")
+		return
+	}
 	table := robot.messageToTable(message)
 
 	LP := lua.P{Fn: L.GetGlobal("onRecvMessage"), Protect: true}
@@ -100,6 +111,7 @@ func (robot *ProxyRobot) loadLuaScript() {
 	}
 
 	go func() {
+		log.Println("Update loop ...")
 		for !robot.Socket.Closed {
 			time.Sleep(100 * time.Millisecond)
 			robot.Mutex.Lock()
@@ -110,24 +122,31 @@ func (robot *ProxyRobot) loadLuaScript() {
 				log.Println("onUpdate err:", err)
 			}
 		}
+		log.Println("Update loop exit")
+		robot.Mutex.Lock()
+		robot.LState.Close()
+		robot.LState = nil
+		robot.Mutex.Unlock()
 	}()
 
-	go func() {
-		watcher, _ := fsnotify.NewWatcher()
-		watcher.Add(robot.Script)
-		defer watcher.Close()
+	// go func() {
+	// 	log.Println("Watcher start ...")
+	// 	watcher, _ := fsnotify.NewWatcher()
+	// 	watcher.Add(robot.Script)
+	// 	defer watcher.Close()
 
-		for event := range watcher.Events {
-			log.Println(event)
-			robot.Mutex.Lock()
-			err := L.DoFile(robot.Script)
-			robot.Mutex.Unlock()
-			if err != nil {
-				log.Println("lua do file fail, err:", err)
-				continue
-			}
-		}
-	}()
+	// 	for event := range watcher.Events {
+	// 		log.Println(event)
+	// 		robot.Mutex.Lock()
+	// 		err := L.DoFile(robot.Script)
+	// 		robot.Mutex.Unlock()
+	// 		if err != nil {
+	// 			log.Println("lua do file fail, err:", err)
+	// 			continue
+	// 		}
+	// 	}
+	// 	log.Println("Watcher exit")
+	// }()
 }
 
 func (robot *ProxyRobot) messageToTable(message *Message) lua.LValue {

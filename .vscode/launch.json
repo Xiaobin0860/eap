@@ -5,11 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Go Launch Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}"
+    },
+    {
       "name": "lldb play one_note_song",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/play",
-      "args": ["${workspaceFolder}/lua/7w7/day3/one_note_song.lua"],
+      "args": [
+        "${workspaceFolder}/lua/7w7/day3/one_note_song.lua"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/@bin",
       "environment": [],
@@ -60,7 +69,9 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/play",
-      "args": ["${workspaceFolder}/lua/7w7/day3/one_note_song.lua"],
+      "args": [
+        "${workspaceFolder}/lua/7w7/day3/one_note_song.lua"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/lua",
       "environment": [],
@@ -75,7 +86,9 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/play",
-      "args": ["${workspaceFolder}/lua/7w7/day3/good_morning_to_all.lua"],
+      "args": [
+        "${workspaceFolder}/lua/7w7/day3/good_morning_to_all.lua"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/lua",
       "environment": [],
@@ -90,7 +103,9 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/@bin/Debug/play",
-      "args": ["${workspaceFolder}/lua/7w7/day3/canon.lua"],
+      "args": [
+        "${workspaceFolder}/lua/7w7/day3/canon.lua"
+      ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/lua",
       "environment": [],
