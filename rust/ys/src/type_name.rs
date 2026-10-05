@@ -9,14 +9,12 @@ pub struct TypeName {
 }
 
 impl TypeName {
-    pub fn search_ename<'a>(&self, contents: &'a str) -> &'a str {
-        let re = Regex::new(&self.fp).unwrap();
-        let mat = re.find(contents).unwrap().as_str();
+    /// Returns the encrypted name for this pattern, or None if it no longer
+    /// matches (game update). Callers must skip on None.
+    pub fn search_ename<'a>(&self, contents: &'a str) -> Option<&'a str> {
+        let re = Regex::new(&self.fp).ok()?;
+        let mat = re.find(contents)?.as_str();
         //DO(xx, DKJFENEJIFH*, LCBase_ListenEvent, (LCBase * __this, PAIDKIKKFCJ * e, Me
-        mat.split(',').collect::<Vec<_>>()[self.idx]
-            .split(' ')
-            .collect::<Vec<_>>()[1]
-            .split('*')
-            .collect::<Vec<_>>()[0]
+        mat.split(',').nth(self.idx)?.split(' ').nth(1)?.split('*').next()
     }
 }

@@ -132,20 +132,25 @@ fn main() -> Result<()> {
     let fnames: Vec<FuncName> = serde_json::from_str(&fnames_string)?;
     debug!("fnames count: {}", fnames.len());
     for fname in fnames.iter() {
-        let ename = fname.search_ename(funcs);
-        try_insert(&mut name_map, &fname.name, ename, &mut encs);
+        match fname.search_ename(funcs) {
+            Some(ename) => try_insert(&mut name_map, &fname.name, ename, &mut encs),
+            None => tracing::warn!("fnames: no match for {} ({})", fname.name, fname.fp),
+        }
     }
     let tnames_file = &rys.join("tnames.json");
     let tnames_string = fs::read_to_string(tnames_file)?;
     let tnames: Vec<TypeName> = serde_json::from_str(&tnames_string)?;
     debug!("tnames count: {}", tnames.len());
     for tname in tnames.iter() {
-        let ename = tname.search_ename(funcs);
-        xps.push(HookInfo::new(
-            tname.name.clone(),
-            format!(r"DO.*, {}_\.*\w+, \(", ename),
-        ));
-        try_insert(&mut name_map, &tname.name, ename, &mut encs);
+        if let Some(ename) = tname.search_ename(funcs) {
+            xps.push(HookInfo::new(
+                tname.name.clone(),
+                format!(r"DO.*, {}_\.*\w+, \(", ename),
+            ));
+            try_insert(&mut name_map, &tname.name, ename, &mut encs);
+        } else {
+            tracing::warn!("tnames: no match for {} ({})", tname.name, tname.fp);
+        }
     }
     let names: HashMap<String, String> = serde_json::from_str(&mtypes_string)?;
     for (k, v) in names.iter() {
@@ -160,25 +165,26 @@ fn main() -> Result<()> {
     //找加密
     for pattern in patterns.iter_mut() {
         trace!("{pattern:?}");
-        let info = &if let Some(tp) = pattern.tp.as_ref() {
+        let info_opt = if let Some(tp) = pattern.tp.as_ref() {
             let tp = tp.as_str();
             if let Some(tp) = tp.strip_prefix('-') {
                 trace!("re={tp}");
                 let re = Regex::new(tp)?;
-                pattern
-                    .search_type_from_funcstr(&re, funcs, &lines, types)
-                    .unwrap()
+                pattern.search_type_from_funcstr(&re, funcs, &lines, types)
             } else {
                 let re = Regex::new(tp)?;
-                pattern
-                    .search_type_from_typestr(&re, types, &lines)
-                    .unwrap()
+                pattern.search_type_from_typestr(&re, types, &lines)
             }
         } else {
             let re = Regex::new(&pattern.mp)?;
-            pattern
-                .search_type_from_funclines(&re, &lines, types)
-                .unwrap()
+            pattern.search_type_from_funclines(&re, &lines, types)
+        };
+        let info = match info_opt {
+            Some(info) => info,
+            None => {
+                tracing::warn!("pattern {}: no match (mp={})", pattern.name, pattern.mp);
+                continue;
+            }
         };
         if info.name.find('_').is_some() {
             let names: Vec<_> = info.name.split('_').collect();
@@ -368,7 +374,13 @@ fn search_funcs(
         let cname = &name.replace(".json", "");
         let h = &od.join(name.replace(".json", ".h"));
         trace!("{} cname={cname}, h={}", f.display(), h.display());
-        let contents = fs::read_to_string(h)?;
+        let contents = match fs::read_to_string(h) {
+            Ok(c) => c,
+            Err(_) => {
+                tracing::warn!("skip {}: {} not generated", cname, h.display());
+                continue;
+            }
+        };
         let contents = contents.as_str();
         let hooks = fs::read_to_string(f)?;
         let hooks = hooks.as_str();
@@ -377,7 +389,13 @@ fn search_funcs(
             if let Some(name) = hook.name.as_ref() {
                 trace!("{hook:?}");
                 let re = Regex::new(&hook.mp)?;
-                let mat = re.find(contents).unwrap().as_str();
+                let mat = match re.find(contents) {
+                    Some(m) => m.as_str(),
+                    None => {
+                        tracing::warn!("hook {}: no match (mp={})", name, hook.mp);
+                        continue;
+                    }
+                };
                 trace!("{mat}");
                 //DO_APP_FUNC(0x048C6300, void, GadgetInteractRsp_FEIJDEOEGML, (
                 let ef = *mat.split(',').collect::<Vec<_>>()[2]
@@ -390,7 +408,13 @@ fn search_funcs(
             if let Some(ps) = hook.ps.as_ref() {
                 trace!("{hook:?}");
                 let re = Regex::new(&hook.mp)?;
-                let mat = re.find(contents).unwrap().as_str();
+                let mat = match re.find(contents) {
+                    Some(m) => m.as_str(),
+                    None => {
+                        tracing::warn!("hook ps: no match (mp={})", hook.mp);
+                        continue;
+                    }
+                };
                 trace!("{mat}");
                 //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
                 let pms = mat.split(", (").collect::<Vec<_>>()[1];
@@ -493,9 +517,13 @@ fn search_xps(
     for pattern in xps.iter_mut() {
         trace!("{pattern:?}");
         let re = Regex::new(&pattern.mp)?;
-        let info = pattern
-            .search_type_from_funclines(&re, lines, types)
-            .unwrap();
+        let info = match pattern.search_type_from_funclines(&re, lines, types) {
+            Some(info) => info,
+            None => {
+                tracing::warn!("xp {}: no match (mp={})", pattern.name, pattern.mp);
+                continue;
+            }
+        };
         try_insert(name_map, &info.name, &info.ename, encs);
         let out = &od.join(format!("{}.h", &info.name));
         debug!("{info}, out={out:?}");
@@ -557,7 +585,13 @@ fn gen_hooks(od: &Path, hooks_dir: &PathBuf) -> Result<()> {
         w.write_all("// ".as_bytes())?;
         w.write_all(cname.as_bytes())?;
         w.write_all("\n".as_bytes())?;
-        let contents = fs::read_to_string(h)?;
+        let contents = match fs::read_to_string(h) {
+            Ok(c) => c,
+            Err(_) => {
+                tracing::warn!("skip {}: {} not generated", cname, h.display());
+                continue;
+            }
+        };
         let contents = contents.as_str();
         let hooks = fs::read_to_string(f)?;
         let hooks = hooks.as_str();
@@ -565,7 +599,13 @@ fn gen_hooks(od: &Path, hooks_dir: &PathBuf) -> Result<()> {
         for hook in hooks.iter_mut() {
             trace!("{hook:?}");
             let re = Regex::new(&hook.mp)?;
-            let mat = re.find(contents).unwrap().as_str();
+            let mat = match re.find(contents) {
+                Some(m) => m.as_str(),
+                None => {
+                    tracing::warn!("gen_hooks {}: no match (mp={})", cname, hook.mp);
+                    continue;
+                }
+            };
             trace!("{mat}");
             //DO_APP_FUNC(0x05C62210, VCCharacterCombat *, BaseEntity_GetVisualCombatComponent_3, (
             let ss = mat.split(',').collect::<Vec<_>>();
@@ -579,7 +619,13 @@ fn gen_hooks(od: &Path, hooks_dir: &PathBuf) -> Result<()> {
                 let fname = &ss[2][1..];
                 let mp = &format!("DO_APP_FUNC_METHODINFO.*{fname}");
                 let re = Regex::new(mp)?;
-                let mat = re.find(contents).unwrap().as_str();
+                let mat = match re.find(contents) {
+                    Some(m) => m.as_str(),
+                    None => {
+                        tracing::warn!("gen_hooks mi: no match (mp={})", mp);
+                        continue;
+                    }
+                };
                 trace!("{mat}");
                 //DO_APP_FUNC_METHODINFO(0x0A4B8E70,
                 let offset = mat.split(',').collect::<Vec<_>>()[0]
